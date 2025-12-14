@@ -1,0 +1,47 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: cilium
+      version: "1.15.x"
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+  values:
+    # Observability
+    hubble:
+      enabled: true
+      relay:
+        enabled: true
+      ui:
+        enabled: true
+      metrics:
+        enabled:
+          - dns
+          - drop
+          - tcp
+          - flow
+          - port-distribution
+          - icmp
+          - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+
+    # WireGuard encryption - simpler than SPIRE mTLS
+    encryption:
+      enabled: true
+      type: wireguard
+      # Encrypt node-to-node traffic (required for cross-region)
+      nodeEncryption: true
+
+    # L7 policy enforcement (alternative to mTLS for service identity)
+    # Uses Cilium's native identity system instead of SPIRE
+    l7Proxy: true
+
+    # IPAM
+    ipam:
+      mode: kubernetes

@@ -1,0 +1,92 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-capabilities
+  annotations:
+    policies.kyverno.io/title: Restrict Linux Capabilities
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Requires all containers to drop ALL Linux capabilities and prevents
+      adding any capabilities back. This implements the principle of least
+      privilege and reduces the attack surface by removing unnecessary
+      kernel-level permissions from containers.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  failurePolicy: Fail
+  rules:
+    - name: drop-all-capabilities
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+      validate:
+        message: >-
+          All containers must drop ALL capabilities. Set securityContext.capabilities.drop
+          to ["ALL"] and do not add any capabilities back.
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  capabilities:
+                    drop:
+                      - "ALL"
+    - name: drop-all-capabilities-init-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+      preconditions:
+        all:
+          - key: "{{ request.object.spec.initContainers[] | length(@) }}"
+            operator: GreaterThanOrEquals
+            value: 1
+      validate:
+        message: >-
+          All init containers must drop ALL capabilities. Set securityContext.capabilities.drop
+          to ["ALL"] and do not add any capabilities back.
+        pattern:
+          spec:
+            initContainers:
+              - securityContext:
+                  capabilities:
+                    drop:
+                      - "ALL"
+    - name: deny-added-capabilities
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+      validate:
+        message: >-
+          Adding capabilities is not allowed. Containers must operate with
+          the minimal set of permissions.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.containers[].securityContext.capabilities.add[] | length(@) }}"
+                operator: GreaterThan
+                value: 0
+              - key: "{{ request.object.spec.[initContainers, ephemeralContainers][].securityContext.capabilities.add[] | length(@) }}"
+                operator: GreaterThan
+                value: 0

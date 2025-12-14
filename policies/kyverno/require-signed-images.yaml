@@ -1,0 +1,36 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-signed-images
+  annotations:
+    policies.kyverno.io/title: Require Signed Images
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Verifies that all container images from ghcr.io/inferadb/* are signed
+      using Sigstore keyless signing with GitHub Actions OIDC identity.
+      This ensures supply chain integrity and prevents deployment of
+      unsigned or tampered images.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  webhookTimeoutSeconds: 30
+  failurePolicy: Fail
+  rules:
+    - name: verify-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/inferadb/*"
+          attestors:
+            - entries:
+                - keyless:
+                    subject: "https://github.com/inferadb/*"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev

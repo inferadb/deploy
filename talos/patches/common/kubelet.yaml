@@ -1,0 +1,16 @@
+# Kubelet configuration patch
+# Applied to all nodes via talhelper
+
+machine:
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: "true"
+      # Enable graceful node shutdown
+      shutdownGracePeriod: "120s"
+      shutdownGracePeriodCriticalPods: "30s"
+    # Node labels for workload scheduling
+    nodeIP:
+      validSubnets:
+        - "10.0.0.0/8"
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"

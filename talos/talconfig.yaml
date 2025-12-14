@@ -1,0 +1,30 @@
+# Talhelper configuration for generating Talos machine configs
+# See: https://github.com/budimanjojo/talhelper
+
+clusterName: inferadb
+talosVersion: v1.8.0
+kubernetesVersion: v1.30.0
+endpoint: https://${TALOS_ENDPOINT}:6443
+
+# Allow scheduling on control plane for dev (override in production)
+allowSchedulingOnControlPlanes: false
+
+# CNI configuration - we use Cilium, not the default
+cniConfig:
+  name: none
+
+nodes: []
+# Nodes are dynamically generated based on environment
+# See .env.{environment} files for node definitions
+
+controlPlane:
+  patches:
+    - "@./patches/common/cilium.yaml"
+    - "@./patches/common/kubelet.yaml"
+    - "@./patches/common/sysctls.yaml"
+
+worker:
+  patches:
+    - "@./patches/common/cilium.yaml"
+    - "@./patches/common/kubelet.yaml"
+    - "@./patches/common/sysctls.yaml"

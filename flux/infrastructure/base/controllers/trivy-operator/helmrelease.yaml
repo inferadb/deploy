@@ -1,0 +1,117 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trivy-operator
+  namespace: trivy-system
+spec:
+  interval: 10m
+  timeout: 5m
+  chart:
+    spec:
+      chart: trivy-operator
+      version: "0.20.x"
+      sourceRef:
+        kind: HelmRepository
+        name: aqua
+        namespace: flux-system
+      interval: 24h
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    # Trivy scanner configuration
+    trivy:
+      # Only report CRITICAL and HIGH severity vulnerabilities
+      severity: "CRITICAL,HIGH"
+      # Scan timeout
+      timeout: "5m"
+      # Trivy image configuration
+      image:
+        registry: ghcr.io
+        repository: aquasecurity/trivy
+        tag: "0.50.0"
+      # Resources for Trivy scanner jobs
+      resources:
+        requests:
+          cpu: 100m
+          memory: 100Mi
+        limits:
+          cpu: 500m
+          memory: 500Mi
+
+    # Operator configuration
+    operator:
+      # Scan jobs concurrent limit
+      scanJobsConcurrentLimit: 3
+      # Scanner types to enable
+      vulnerabilityScannerEnabled: true
+      configAuditScannerEnabled: true
+      rbacAssessmentScannerEnabled: false
+      infraAssessmentScannerEnabled: false
+      clusterComplianceEnabled: false
+      # SBOM generation
+      sbomGenerationEnabled: true
+      # Scan job settings
+      scanJobTimeout: 5m
+      scanJobTolerations: []
+      # Operator resources
+      resources:
+        requests:
+          cpu: 50m
+          memory: 100Mi
+        limits:
+          cpu: 200m
+          memory: 200Mi
+
+    # Service account configuration
+    serviceAccount:
+      create: true
+      annotations: {}
+      name: trivy-operator
+
+    # Security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Container security context
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+
+    # Vulnerability report settings
+    vulnerabilityReports:
+      # Scan interval for existing workloads
+      scanJobsInSameNamespace: true
+
+    # Config audit report settings
+    configAuditReports:
+      # Scan interval for config audits
+      scanJobsInSameNamespace: true
+
+    # Metrics and monitoring
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+
+    # Node affinity for scanner jobs (optional - can be customized per environment)
+    nodeSelector: {}
+
+    # Tolerations (optional - can be customized per environment)
+    tolerations: []

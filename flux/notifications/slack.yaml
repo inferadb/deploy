@@ -1,0 +1,44 @@
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: slack
+  namespace: flux-system
+spec:
+  type: slack
+  # Secret should contain a 'address' key with the Slack webhook URL
+  # Example: https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+  secretRef:
+    name: slack-webhook-url
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: infrastructure-alerts
+  namespace: flux-system
+spec:
+  providerRef:
+    name: slack
+  eventSeverity: error
+  eventSources:
+    - kind: Kustomization
+      name: infrastructure
+    - kind: HelmRelease
+      namespace: '*'
+  summary: "InferaDB Infrastructure Alert"
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: apps-alerts
+  namespace: flux-system
+spec:
+  providerRef:
+    name: slack
+  eventSeverity: error
+  eventSources:
+    - kind: Kustomization
+      name: apps
+    - kind: HelmRelease
+      namespace: inferadb
+  summary: "InferaDB Application Alert"

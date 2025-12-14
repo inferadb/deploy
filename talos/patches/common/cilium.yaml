@@ -1,0 +1,9 @@
+machine:
+  network:
+    interfaces:
+      - interface: eth0
+        dhcp: true
+cluster:
+  network:
+    cni:
+      name: none  # We'll install Cilium via Flux

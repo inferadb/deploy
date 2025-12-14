@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: policies
+  annotations:
+    config.kubernetes.io/description: >-
+      Infrastructure policies for InferaDB deployment. This references
+      Kyverno ClusterPolicies from the policies/ directory for supply chain
+      security, registry restrictions, standard labels, and capability restrictions.
+resources:
+  - ../../../policies/kyverno

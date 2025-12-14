@@ -1,0 +1,74 @@
+# Mise configuration for InferaDB deployment tooling
+# https://mise.jdx.dev/
+#
+# Install tools with: mise install
+# Activate environment with: mise activate (or use direnv)
+
+[tools]
+# Kubernetes CLI
+kubectl = "1.30"
+
+# Infrastructure as Code
+terraform = "1.14"
+
+# Talos Linux
+talosctl = "1.8"
+talhelper = "3"
+
+# GitOps
+flux2 = "2.4"
+
+# CNI
+cilium-cli = "0.16"
+
+# Secrets management
+age = "1"
+sops = "3"
+
+# Helm (for chart inspection)
+helm = "3"
+
+# GitHub CLI (for PR automation)
+github-cli = "2"
+
+[env]
+# Talos configuration
+TALOSCONFIG = "{{ config_root }}/talos/clusterconfig/talosconfig"
+
+# Default kubeconfig for dev cluster
+KUBECONFIG = "{{ env.HOME }}/.kube/inferadb-dev"
+
+[tasks.check-tools]
+description = "Verify all required tools are installed"
+run = """
+echo "Checking deployment tools..."
+echo ""
+echo "Core:"
+echo "  kubectl:   $(kubectl version --client -o json 2>/dev/null | jq -r '.clientVersion.gitVersion' || echo 'NOT INSTALLED')"
+echo "  terraform: $(terraform version -json 2>/dev/null | jq -r '.terraform_version' || echo 'NOT INSTALLED')"
+echo ""
+echo "Talos:"
+echo "  talosctl:  $(talosctl version --client 2>/dev/null | grep Tag | awk '{print $2}' || echo 'NOT INSTALLED')"
+echo "  talhelper: $(talhelper --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo ""
+echo "GitOps:"
+echo "  flux:      $(flux version --client 2>/dev/null | grep 'flux:' | awk '{print $2}' || echo 'NOT INSTALLED')"
+echo "  cilium:    $(cilium version --client 2>/dev/null | grep 'cilium-cli' | awk '{print $2}' || echo 'NOT INSTALLED')"
+echo ""
+echo "Secrets:"
+echo "  age:       $(age --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "  sops:      $(sops --version 2>/dev/null | head -1 || echo 'NOT INSTALLED')"
+echo ""
+echo "Other:"
+echo "  helm:      $(helm version --short 2>/dev/null || echo 'NOT INSTALLED')"
+echo "  gh:        $(gh --version 2>/dev/null | head -1 || echo 'NOT INSTALLED')"
+echo "  docker:    $(docker --version 2>/dev/null || echo 'NOT INSTALLED')"
+"""
+
+[tasks.dev-up]
+description = "Start local development cluster"
+run = "./scripts/dev-up.sh"
+
+[tasks.dev-down]
+description = "Stop local development cluster"
+run = "./scripts/dev-down.sh"

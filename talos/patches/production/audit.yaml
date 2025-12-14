@@ -1,0 +1,63 @@
+# Kubernetes audit logging configuration
+# Applied to production control plane nodes
+
+cluster:
+  apiServer:
+    auditPolicy:
+      apiVersion: audit.k8s.io/v1
+      kind: Policy
+      rules:
+        # Log authentication failures
+        - level: Metadata
+          users: ["system:anonymous"]
+          verbs: ["*"]
+
+        # Log all changes to secrets (but not the data)
+        - level: Metadata
+          resources:
+            - group: ""
+              resources: ["secrets"]
+          verbs: ["create", "update", "patch", "delete"]
+
+        # Log all changes to RBAC
+        - level: Metadata
+          resources:
+            - group: "rbac.authorization.k8s.io"
+              resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+
+        # Log all pod exec/attach
+        - level: Request
+          resources:
+            - group: ""
+              resources: ["pods/exec", "pods/attach", "pods/portforward"]
+
+        # Log all changes to InferaDB resources
+        - level: Request
+          namespaces: ["inferadb"]
+          verbs: ["create", "update", "patch", "delete"]
+
+        # Log all changes to FoundationDB
+        - level: Request
+          resources:
+            - group: "apps.foundationdb.org"
+              resources: ["*"]
+
+        # Don't log reads of common resources (too noisy)
+        - level: None
+          resources:
+            - group: ""
+              resources: ["endpoints", "services", "configmaps"]
+          verbs: ["get", "list", "watch"]
+
+        # Don't log health checks
+        - level: None
+          users: ["system:kube-proxy", "kubelet"]
+          verbs: ["get"]
+          resources:
+            - group: ""
+              resources: ["nodes", "nodes/status"]
+
+        # Default: log metadata for everything else
+        - level: Metadata
+          omitStages:
+            - "RequestReceived"

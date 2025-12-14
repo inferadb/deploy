@@ -1,0 +1,68 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: foundationdb-policy
+  namespace: inferadb
+spec:
+  endpointSelector:
+    matchLabels:
+      app: foundationdb
+  ingress:
+    # Allow traffic from engine
+    - fromEndpoints:
+        - matchLabels:
+            app: inferadb-engine
+      toPorts:
+        - ports:
+            - port: "4500"
+              protocol: TCP
+    # Allow traffic from other FDB processes (cluster coordination)
+    - fromEndpoints:
+        - matchLabels:
+            app: foundationdb
+      toPorts:
+        - ports:
+            - port: "4500"
+              protocol: TCP
+            - port: "4501" # Coordination port
+              protocol: TCP
+    # Allow Prometheus scraping
+    - fromEndpoints:
+        - matchLabels:
+            app: fdb-prometheus-exporter
+      toPorts:
+        - ports:
+            - port: "4500"
+              protocol: TCP
+  egress:
+    # FDB cluster coordination only - NO internet access
+    - toEndpoints:
+        - matchLabels:
+            app: foundationdb
+      toPorts:
+        - ports:
+            - port: "4500"
+              protocol: TCP
+            - port: "4501"
+              protocol: TCP
+    # DNS resolution (required for service discovery)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    # S3/GCS for backups (backup agent runs on FDB pods)
+    - toFQDNs:
+        - matchPattern: "*.s3.amazonaws.com"
+        - matchPattern: "*.s3.*.amazonaws.com"
+        - matchPattern: "storage.googleapis.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    # EXPLICITLY DENY all other egress (internet access blocked)

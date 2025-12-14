@@ -1,0 +1,131 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  annotations:
+    policies.kyverno.io/title: Require Standard Labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod, Deployment, StatefulSet, DaemonSet
+    policies.kyverno.io/description: >-
+      Requires all workload resources to have standard Kubernetes labels
+      for consistency, observability, and operational management. These labels
+      enable proper resource tracking, ownership identification, and integration
+      with monitoring and management tools.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  failurePolicy: Fail
+  rules:
+    - name: require-labels-pods
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: >-
+          Pods must have the following labels: app.kubernetes.io/name,
+          app.kubernetes.io/instance, app.kubernetes.io/version,
+          app.kubernetes.io/component, app.kubernetes.io/part-of,
+          app.kubernetes.io/managed-by
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/instance: "?*"
+              app.kubernetes.io/version: "?*"
+              app.kubernetes.io/component: "?*"
+              app.kubernetes.io/part-of: "?*"
+              app.kubernetes.io/managed-by: "?*"
+    - name: require-labels-deployments
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: >-
+          Deployments must have the following labels: app.kubernetes.io/name,
+          app.kubernetes.io/instance, app.kubernetes.io/version,
+          app.kubernetes.io/component, app.kubernetes.io/part-of,
+          app.kubernetes.io/managed-by
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/instance: "?*"
+              app.kubernetes.io/version: "?*"
+              app.kubernetes.io/component: "?*"
+              app.kubernetes.io/part-of: "?*"
+              app.kubernetes.io/managed-by: "?*"
+    - name: require-labels-statefulsets
+      match:
+        any:
+          - resources:
+              kinds:
+                - StatefulSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: >-
+          StatefulSets must have the following labels: app.kubernetes.io/name,
+          app.kubernetes.io/instance, app.kubernetes.io/version,
+          app.kubernetes.io/component, app.kubernetes.io/part-of,
+          app.kubernetes.io/managed-by
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/instance: "?*"
+              app.kubernetes.io/version: "?*"
+              app.kubernetes.io/component: "?*"
+              app.kubernetes.io/part-of: "?*"
+              app.kubernetes.io/managed-by: "?*"
+    - name: require-labels-daemonsets
+      match:
+        any:
+          - resources:
+              kinds:
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: >-
+          DaemonSets must have the following labels: app.kubernetes.io/name,
+          app.kubernetes.io/instance, app.kubernetes.io/version,
+          app.kubernetes.io/component, app.kubernetes.io/part-of,
+          app.kubernetes.io/managed-by
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/instance: "?*"
+              app.kubernetes.io/version: "?*"
+              app.kubernetes.io/component: "?*"
+              app.kubernetes.io/part-of: "?*"
+              app.kubernetes.io/managed-by: "?*"

@@ -1,0 +1,54 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: inferadb-engine-policy
+  namespace: inferadb
+spec:
+  endpointSelector:
+    matchLabels:
+      app: inferadb-engine
+  ingress:
+    # Allow traffic from control plane
+    - fromEndpoints:
+        - matchLabels:
+            app: inferadb-control
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "8081"
+              protocol: TCP
+    # Allow traffic from other engine instances (mesh)
+    - fromEndpoints:
+        - matchLabels:
+            app: inferadb-engine
+      toPorts:
+        - ports:
+            - port: "8082"
+              protocol: TCP
+    # Allow Prometheus scraping
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+  egress:
+    # Allow FDB connections
+    - toEndpoints:
+        - matchLabels:
+            app: foundationdb
+      toPorts:
+        - ports:
+            - port: "4500"
+              protocol: TCP
+    # Allow DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP

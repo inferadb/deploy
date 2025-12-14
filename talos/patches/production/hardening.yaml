@@ -1,0 +1,42 @@
+# Production security hardening patch
+# Applied to production nodes via talhelper
+
+machine:
+  # Disable debug features in production
+  features:
+    kubernetesTalosAPIAccess:
+      enabled: false
+
+  # Strict file permissions
+  files:
+    - path: /var/log
+      permissions: 0750
+
+  # Kernel security settings
+  sysctls:
+    # Disable IP source routing
+    net.ipv4.conf.all.accept_source_route: "0"
+    net.ipv4.conf.default.accept_source_route: "0"
+
+    # Disable ICMP redirects
+    net.ipv4.conf.all.accept_redirects: "0"
+    net.ipv4.conf.default.accept_redirects: "0"
+    net.ipv4.conf.all.secure_redirects: "0"
+
+    # Enable SYN cookies for DDoS mitigation
+    net.ipv4.tcp_syncookies: "1"
+
+    # Log martian packets
+    net.ipv4.conf.all.log_martians: "1"
+
+    # Ignore broadcast pings
+    net.ipv4.icmp_echo_ignore_broadcasts: "1"
+
+cluster:
+  # Enable audit logging
+  apiServer:
+    extraArgs:
+      audit-log-path: "/var/log/audit/kube-apiserver-audit.log"
+      audit-log-maxage: "30"
+      audit-log-maxbackup: "10"
+      audit-log-maxsize: "100"

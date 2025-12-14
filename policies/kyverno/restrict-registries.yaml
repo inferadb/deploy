@@ -1,0 +1,65 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-registries
+  annotations:
+    policies.kyverno.io/title: Restrict Container Registries
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Restricts container images to approved registries only. This prevents
+      deployment of images from untrusted or unknown sources. Approved registries
+      include ghcr.io/inferadb (InferaDB images), docker.io/library (official images),
+      quay.io/prometheus (monitoring), and registry.k8s.io (Kubernetes components).
+spec:
+  validationFailureAction: Enforce
+  background: true
+  failurePolicy: Fail
+  rules:
+    - name: allowed-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Images must come from approved registries: ghcr.io/inferadb/*, docker.io/library/*, quay.io/prometheus/*, registry.k8s.io/*"
+        pattern:
+          spec:
+            containers:
+              - image: "ghcr.io/inferadb/* | docker.io/library/* | quay.io/prometheus/* | registry.k8s.io/*"
+    - name: allowed-registries-init-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      preconditions:
+        all:
+          - key: "{{ request.object.spec.initContainers[] | length(@) }}"
+            operator: GreaterThanOrEquals
+            value: 1
+      validate:
+        message: "Init container images must come from approved registries: ghcr.io/inferadb/*, docker.io/library/*, quay.io/prometheus/*, registry.k8s.io/*"
+        pattern:
+          spec:
+            initContainers:
+              - image: "ghcr.io/inferadb/* | docker.io/library/* | quay.io/prometheus/* | registry.k8s.io/*"
+    - name: allowed-registries-ephemeral-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      preconditions:
+        all:
+          - key: "{{ request.object.spec.ephemeralContainers[] | length(@) }}"
+            operator: GreaterThanOrEquals
+            value: 1
+      validate:
+        message: "Ephemeral container images must come from approved registries: ghcr.io/inferadb/*, docker.io/library/*, quay.io/prometheus/*, registry.k8s.io/*"
+        pattern:
+          spec:
+            ephemeralContainers:
+              - image: "ghcr.io/inferadb/* | docker.io/library/* | quay.io/prometheus/* | registry.k8s.io/*"
