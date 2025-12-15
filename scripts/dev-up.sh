@@ -12,11 +12,26 @@ echo "=== Creating local Talos cluster for InferaDB development ==="
 echo "Cluster name: ${CLUSTER_NAME}"
 echo ""
 
-# Check if cluster already exists
-if talosctl cluster show --name "${CLUSTER_NAME}" >/dev/null 2>&1; then
+# Check if cluster already exists (by checking for Docker containers)
+if docker ps -a --filter "name=${CLUSTER_NAME}" --format '{{.Names}}' 2>/dev/null | grep -q "${CLUSTER_NAME}"; then
   echo "Cluster '${CLUSTER_NAME}' already exists."
   echo "To recreate it, first run: ./scripts/dev-down.sh"
   exit 1
+fi
+
+# Clean up any stale talosctl contexts to prevent "-1" suffix on new cluster
+for ctx in $(talosctl config contexts 2>/dev/null | awk '{print $2}' | grep "^${CLUSTER_NAME}"); do
+  echo "Cleaning up stale talosctl context: ${ctx}..."
+  talosctl config context "" 2>/dev/null || true
+  talosctl config remove "${ctx}" --noconfirm 2>/dev/null || true
+done
+
+# Clean up stale kubectl contexts
+if kubectl config get-contexts -o name 2>/dev/null | grep -q "^admin@${CLUSTER_NAME}"; then
+  echo "Cleaning up stale kubectl context..."
+  kubectl config delete-context "${KUBE_CONTEXT}" 2>/dev/null || true
+  kubectl config delete-cluster "${CLUSTER_NAME}" 2>/dev/null || true
+  kubectl config delete-user "${KUBE_CONTEXT}" 2>/dev/null || true
 fi
 
 # Create cluster using talosctl (Docker provisioner)
@@ -29,7 +44,7 @@ talosctl cluster create \
   --workers 1 \
   --controlplanes 1 \
   --provisioner docker \
-  --kubernetes-version 1.30.0 \
+  --kubernetes-version 1.32.0 \
   --wait-timeout 10m
 
 echo ""

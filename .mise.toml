@@ -6,7 +6,7 @@
 
 [tools]
 # Kubernetes CLI
-kubectl = "1.30"
+kubectl = "1.32"
 
 # Infrastructure as Code
 terraform = "1.14"

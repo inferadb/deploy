@@ -1,0 +1,29 @@
+---
+# Flux GitRepository source for dev-local cluster
+# In local dev, we apply manifests directly rather than syncing from git
+# This file is a placeholder for consistency with production clusters
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  # For local dev, this URL won't be used since we apply manifests directly
+  # In production, this would point to the actual git repository
+  url: ssh://git@github.com/inferadb/inferadb
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./deploy/flux/clusters/dev-local
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
