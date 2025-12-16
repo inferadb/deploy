@@ -7,10 +7,18 @@ set -euo pipefail
 
 CLUSTER_NAME="inferadb-dev"
 KUBE_CONTEXT="admin@${CLUSTER_NAME}"
+REGISTRY_NAME="inferadb-registry"
 
 echo "=== Tearing down local Talos cluster ==="
 echo "Cluster name: ${CLUSTER_NAME}"
 echo ""
+
+# Stop and remove the local registry container (connected to cluster network)
+if docker ps -a --filter "name=${REGISTRY_NAME}" --format '{{.Names}}' 2>/dev/null | grep -q "${REGISTRY_NAME}"; then
+  echo "Stopping and removing local registry..."
+  docker stop "${REGISTRY_NAME}" 2>/dev/null || true
+  docker rm "${REGISTRY_NAME}" 2>/dev/null || true
+fi
 
 # Check if Docker containers exist for this cluster
 if ! docker ps -a --filter "name=${CLUSTER_NAME}" --format '{{.Names}}' 2>/dev/null | grep -q "${CLUSTER_NAME}"; then

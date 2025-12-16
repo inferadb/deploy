@@ -39,11 +39,30 @@ deploy/
 ### Local Development
 
 ```bash
-# Start local Talos cluster with Cilium and Flux
+# Create local Talos cluster and deploy full InferaDB stack
+# (builds container images, deploys FDB, engine, control, dashboard)
 ./scripts/dev-up.sh
+
+# Skip image builds (use existing images)
+./scripts/dev-up.sh --skip-build
 
 # Tear down local cluster
 ./scripts/dev-down.sh
+```
+
+The dev environment deploys:
+
+- **FoundationDB**: Single-node cluster for development
+- **Engine**: Authorization policy decision engine
+- **Control**: Control plane API
+- **Dashboard**: Web console
+
+Access services via port forwarding:
+
+```bash
+kubectl port-forward -n inferadb svc/inferadb-engine 8080:8080
+kubectl port-forward -n inferadb svc/inferadb-control 9090:9090
+kubectl port-forward -n inferadb svc/inferadb-dashboard 3000:3000
 ```
 
 ### Staging/Production Deployment

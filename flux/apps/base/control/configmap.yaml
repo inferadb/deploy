@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inferadb-control-config
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-control
+    app.kubernetes.io/component: control
+    app.kubernetes.io/part-of: inferadb
+data:
+  # Environment variables use INFERADB__CONTROL__ prefix (matching config crate's RootConfig)
+  # The config crate uses: prefix=INFERADB, separator=__, then deserializes to RootConfig.control
+
+  # Frontend URL (for email verification links)
+  INFERADB__CONTROL__FRONTEND__URL: "http://inferadb-dashboard.inferadb:3000"
+
+  # Listen configuration - MUST bind to 0.0.0.0 for K8s networking
+  INFERADB__CONTROL__LISTEN__HTTP: "0.0.0.0:9090"
+  INFERADB__CONTROL__LISTEN__GRPC: "0.0.0.0:9091"
+  INFERADB__CONTROL__LISTEN__MESH: "0.0.0.0:9092"
+
+  # Storage configuration - use FoundationDB
+  INFERADB__CONTROL__STORAGE: "foundationdb"
+  INFERADB__CONTROL__FOUNDATIONDB__CLUSTER_FILE: "/etc/foundationdb/fdb.cluster"
+
+  # WebAuthn configuration (dev defaults)
+  INFERADB__CONTROL__WEBAUTHN__PARTY: "localhost"
+  INFERADB__CONTROL__WEBAUTHN__ORIGIN: "http://localhost:3000"
+
+  # Email configuration (dev - using insecure mode for Mailpit)
+  INFERADB__CONTROL__EMAIL__HOST: "mailpit.inferadb"
+  INFERADB__CONTROL__EMAIL__PORT: "1025"
+  INFERADB__CONTROL__EMAIL__ADDRESS: "noreply@inferadb.local"
+  INFERADB__CONTROL__EMAIL__NAME: "InferaDB"
+  INFERADB__CONTROL__EMAIL__INSECURE: "true"
+
+  # Rate limits (relaxed for dev)
+  INFERADB__CONTROL__LIMITS__LOGIN_ATTEMPTS_PER_IP_PER_HOUR: "100"
+  INFERADB__CONTROL__LIMITS__REGISTRATIONS_PER_IP_PER_DAY: "50"
+  INFERADB__CONTROL__LIMITS__EMAIL_VERIFICATION_TOKENS_PER_HOUR: "50"
+  INFERADB__CONTROL__LIMITS__PASSWORD_RESET_TOKENS_PER_HOUR: "30"
+
+  # Mesh configuration (communication with Engine)
+  INFERADB__CONTROL__MESH__URL: "http://inferadb-engine.inferadb"
+  INFERADB__CONTROL__MESH__GRPC: "8081"
+  INFERADB__CONTROL__MESH__PORT: "8082"

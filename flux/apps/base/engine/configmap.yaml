@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inferadb-engine-config
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-engine
+    app.kubernetes.io/component: engine
+    app.kubernetes.io/part-of: inferadb
+data:
+  # Root-level configuration
+  INFERADB__ENGINE__THREADS: "2"
+  INFERADB__ENGINE__LOGGING: "info"
+
+  # Listen configuration
+  INFERADB__ENGINE__LISTEN__HTTP: "0.0.0.0:8080"
+  INFERADB__ENGINE__LISTEN__GRPC: "0.0.0.0:8081"
+  INFERADB__ENGINE__LISTEN__MESH: "0.0.0.0:8082"
+
+  # Storage configuration - use FoundationDB
+  INFERADB__ENGINE__STORAGE: "foundationdb"
+  INFERADB__ENGINE__FOUNDATIONDB__CLUSTER_FILE: "/etc/foundationdb/fdb.cluster"
+
+  # Cache configuration
+  INFERADB__ENGINE__CACHE__ENABLED: "true"
+  INFERADB__ENGINE__CACHE__CAPACITY: "10000"
+  INFERADB__ENGINE__CACHE__TTL: "300"
+
+  # Token validation configuration
+  INFERADB__ENGINE__TOKEN__CACHE_TTL: "300"
+  INFERADB__ENGINE__TOKEN__CLOCK_SKEW: "60"
+  INFERADB__ENGINE__TOKEN__MAX_AGE: "86400"
+
+  # Mesh configuration (communication with Control service)
+  INFERADB__ENGINE__MESH__URL: "http://inferadb-control.inferadb:9092"
+  INFERADB__ENGINE__MESH__TIMEOUT: "5000"
+  INFERADB__ENGINE__MESH__CACHE_TTL: "300"
+  INFERADB__ENGINE__MESH__CERT_CACHE_TTL: "900"

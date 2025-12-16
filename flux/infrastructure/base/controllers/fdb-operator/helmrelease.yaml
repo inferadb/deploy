@@ -1,0 +1,50 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: fdb-operator
+  namespace: fdb-system
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: fdb-operator
+      version: "2.x"
+      sourceRef:
+        kind: HelmRepository
+        name: foundationdb
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    timeout: 10m
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    timeout: 10m
+    remediation:
+      retries: 3
+  values:
+    # Run in cluster-scoped mode to manage FDB clusters across namespaces
+    globalMode:
+      enabled: true
+
+    # Operator configuration
+    operator:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+    # Enable Prometheus metrics
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+
+    # Image configuration - use official FoundationDB images
+    image:
+      repository: foundationdb/fdb-kubernetes-operator
+      pullPolicy: IfNotPresent

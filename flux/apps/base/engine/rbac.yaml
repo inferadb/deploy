@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: inferadb-engine
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-engine
+    app.kubernetes.io/component: engine
+    app.kubernetes.io/part-of: inferadb

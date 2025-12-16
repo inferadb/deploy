@@ -11,7 +11,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./flux/apps/base
+  path: ./flux/apps/dev
   prune: true
   wait: true
   # Apps depend on infrastructure being ready
