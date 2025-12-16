@@ -89,6 +89,8 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            - name: data
+              mountPath: /data
           resources:
             requests:
               cpu: 100m
@@ -138,6 +140,8 @@ spec:
               - key: cluster-file
                 path: fdb.cluster
         - name: tmp
+          emptyDir: {}
+        - name: data
           emptyDir: {}
 
       terminationGracePeriodSeconds: 30

@@ -6,3 +6,6 @@ resources:
   - engine
   - control
   - dashboard
+  # Note: Ingress is NOT included in base - each overlay chooses its ingress strategy:
+  # - Dev uses Tailscale (automatic HTTPS via Tailscale network)
+  # - Production/Staging uses Nginx Ingress (host-based routing)

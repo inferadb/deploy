@@ -1,0 +1,169 @@
+# Base ingress configuration for InferaDB
+# Uses host-based routing to mirror production domain structure
+# Dev overlay patches hosts to use *.inferadb.localhost
+# Prod overlay patches hosts to use *.inferadb.com
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inferadb-api
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-api
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: inferadb
+  annotations:
+    # Production-ready annotations
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # CORS headers for API access from dashboard
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://dashboard.inferadb.localhost,https://dashboard.inferadb.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Request-ID"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.inferadb.localhost
+      secretName: inferadb-tls
+  rules:
+    # API host serves both control and engine APIs
+    # /v1/auth/*, /v1/organizations/*, /v1/users/* -> Control
+    # /v1/check, /v1/expand, /v1/lookup/* -> Engine
+    - host: api.inferadb.localhost
+      http:
+        paths:
+          # Control plane endpoints (auth, organizations, users, vaults, etc.)
+          - path: /v1/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /v1/organizations
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /v1/users
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /v1/tokens
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /v1/vaults
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          # Health endpoints (control)
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /readyz
+            pathType: Exact
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /livez
+            pathType: Exact
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          # Engine endpoints (authorization checks)
+          - path: /v1/check
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-engine
+                port:
+                  number: 8080
+          - path: /v1/expand
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-engine
+                port:
+                  number: 8080
+          - path: /v1/lookup
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-engine
+                port:
+                  number: 8080
+          - path: /v1/write
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-engine
+                port:
+                  number: 8080
+          - path: /v1/delete
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-engine
+                port:
+                  number: 8080
+---
+# Separate ingress for dashboard (different host)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inferadb-dashboard
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-dashboard-ingress
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: inferadb
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-body-size: "5m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - dashboard.inferadb.localhost
+      secretName: inferadb-tls
+  rules:
+    - host: dashboard.inferadb.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-dashboard
+                port:
+                  number: 3000

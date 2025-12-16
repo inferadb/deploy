@@ -1,0 +1,130 @@
+# Tailscale Ingress for InferaDB
+# Exposes services via Tailscale network with automatic HTTPS
+# Services accessible at: https://inferadb-api.<tailnet>.ts.net
+#
+# Prerequisites:
+# 1. HTTPS enabled on tailnet (https://login.tailscale.com/admin/dns → Enable HTTPS)
+# 2. Tailscale Kubernetes Operator installed with OAuth credentials
+# 3. Tags configured: k8s-operator (owner: you), k8s (owner: tag:k8s-operator)
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inferadb-api-tailscale
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-api-tailscale
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: inferadb
+spec:
+  ingressClassName: tailscale
+  tls:
+    - hosts:
+        # The hostname becomes: inferadb-api.<tailnet>.ts.net
+        # Only the first label (inferadb-api) is used
+        - inferadb-api
+  rules:
+    - http:
+        paths:
+          # Control plane API endpoints (auth, organizations, users, vaults, etc.)
+          # All control endpoints are prefixed with /control/v1/
+          - path: /control/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          # JWKS discovery endpoints (control plane)
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          # Health endpoints (control plane)
+          - path: /healthz
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /readyz
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          - path: /livez
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-control
+                port:
+                  number: 9090
+          # Access (engine) API endpoints (authorization checks, relationship management)
+          # All engine endpoints are prefixed with /access/v1/
+          - path: /access/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-engine
+                port:
+                  number: 8080
+---
+# Separate Tailscale Ingress for Dashboard
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inferadb-dashboard-tailscale
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-dashboard-tailscale
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: inferadb
+spec:
+  ingressClassName: tailscale
+  tls:
+    - hosts:
+        # The hostname becomes: inferadb-dashboard.<tailnet>.ts.net
+        - inferadb-dashboard
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inferadb-dashboard
+                port:
+                  number: 3000
+---
+# Tailscale Ingress for Mailpit (dev email testing)
+# Accessible at: https://inferadb-mailpit.<tailnet>.ts.net
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inferadb-mailpit-tailscale
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-mailpit-tailscale
+    app.kubernetes.io/component: email
+    app.kubernetes.io/part-of: inferadb
+spec:
+  ingressClassName: tailscale
+  tls:
+    - hosts:
+        - inferadb-mailpit
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mailpit
+                port:
+                  number: 8025
