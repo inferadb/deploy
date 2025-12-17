@@ -40,7 +40,16 @@ data:
   INFERADB__CONTROL__LIMITS__EMAIL_VERIFICATION_TOKENS_PER_HOUR: "50"
   INFERADB__CONTROL__LIMITS__PASSWORD_RESET_TOKENS_PER_HOUR: "30"
 
+  # Master key file path (for encrypting client private keys)
+  # Uses absolute path to mounted emptyDir volume
+  INFERADB__CONTROL__KEY_FILE: "/data/master.key"
+
   # Mesh configuration (communication with Engine)
+  # Port 8080 is the Engine's public REST API (used by EngineClient)
   INFERADB__CONTROL__MESH__URL: "http://inferadb-engine.inferadb"
-  INFERADB__CONTROL__MESH__GRPC: "8081"
+  INFERADB__CONTROL__MESH__GRPC: "8080"
   INFERADB__CONTROL__MESH__PORT: "8082"
+
+  # JWT audience for Engine-to-Control authentication
+  # Must match the Engine's INFERADB__ENGINE__MESH__URL setting
+  CONTROL_API_AUDIENCE: "http://inferadb-control.inferadb:9092"
