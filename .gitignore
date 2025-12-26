@@ -1,1 +1,4 @@
 certs/
+.DS_Store
+DEPLOYMENT_PLAN.md
+PHASE1_COMPLETE.md
