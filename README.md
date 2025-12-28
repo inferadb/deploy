@@ -38,16 +38,17 @@ deploy/
 
 ### Local Development
 
+Use the InferaDB CLI for local development:
+
 ```bash
 # Create local Talos cluster and deploy full InferaDB stack
-# (builds container images, deploys FDB, engine, control, dashboard)
-./scripts/dev-up.sh
+inferadb dev start
 
-# Skip image builds (use existing images)
-./scripts/dev-up.sh --skip-build
+# Show cluster status
+inferadb dev status
 
 # Tear down local cluster
-./scripts/dev-down.sh
+inferadb dev stop --destroy
 ```
 
 The dev environment deploys:

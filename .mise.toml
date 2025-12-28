@@ -67,8 +67,8 @@ echo "  docker:    $(docker --version 2>/dev/null || echo 'NOT INSTALLED')"
 
 [tasks.dev-up]
 description = "Start local development cluster"
-run = "./scripts/dev-up.sh"
+run = "inferadb dev start"
 
 [tasks.dev-down]
 description = "Stop local development cluster"
-run = "./scripts/dev-down.sh"
+run = "inferadb dev stop --destroy"
