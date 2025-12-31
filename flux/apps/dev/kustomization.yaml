@@ -1,6 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# Prefix all resource names with 'dev-' to differentiate from staging/production
+namePrefix: dev-
+
 # Inherit from base and add dev-specific resources
 resources:
   - ../base
@@ -115,6 +118,69 @@ patches:
       - op: replace
         path: /spec/tls/0/hosts/0
         value: inferadb-dev-mailpit
+
+  # Update engine init container to use dev-prefixed FDB service name
+  - target:
+      kind: Deployment
+      name: inferadb-engine
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/initContainers/0/command
+        value:
+          - sh
+          - -c
+          - |
+            echo "Waiting for FoundationDB to be ready..."
+            until nc -z -v -w30 dev-inferadb-fdb 4500; do
+              echo "Waiting for FoundationDB..."
+              sleep 5
+            done
+            echo "FoundationDB is ready!"
+
+  # Update control init container to use dev-prefixed FDB service name
+  - target:
+      kind: Deployment
+      name: inferadb-control
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/initContainers/0/command
+        value:
+          - sh
+          - -c
+          - |
+            echo "Waiting for FoundationDB to be ready..."
+            until nc -z -v -w30 dev-inferadb-fdb 4500; do
+              echo "Waiting for FoundationDB..."
+              sleep 5
+            done
+            echo "FoundationDB is ready!"
+
+  # Update engine config with dev-prefixed service URLs
+  - target:
+      kind: ConfigMap
+      name: inferadb-engine-config
+    patch: |-
+      - op: replace
+        path: /data/INFERADB__ENGINE__MESH__URL
+        value: "http://dev-inferadb-control.inferadb:9092"
+
+  # Update control config with dev-prefixed service URLs
+  - target:
+      kind: ConfigMap
+      name: inferadb-control-config
+    patch: |-
+      - op: replace
+        path: /data/INFERADB__CONTROL__FRONTEND__URL
+        value: "http://dev-inferadb-dashboard.inferadb:3000"
+      - op: replace
+        path: /data/INFERADB__CONTROL__EMAIL__HOST
+        value: "dev-mailpit.inferadb"
+      - op: replace
+        path: /data/INFERADB__CONTROL__MESH__URL
+        value: "http://dev-inferadb-engine.inferadb"
+      - op: replace
+        path: /data/CONTROL_API_AUDIENCE
+        value: "http://dev-inferadb-control.inferadb:9092"
 
 # Dev-specific labels
 labels:
