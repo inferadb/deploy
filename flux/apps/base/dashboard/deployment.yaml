@@ -5,8 +5,11 @@ metadata:
   namespace: inferadb
   labels:
     app.kubernetes.io/name: inferadb-dashboard
+    app.kubernetes.io/instance: inferadb-dashboard
+    app.kubernetes.io/version: latest
     app.kubernetes.io/component: dashboard
     app.kubernetes.io/part-of: inferadb
+    app.kubernetes.io/managed-by: flux
 spec:
   replicas: 1
   strategy:
@@ -22,7 +25,11 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: inferadb-dashboard
+        app.kubernetes.io/instance: inferadb-dashboard
+        app.kubernetes.io/version: latest
         app.kubernetes.io/component: dashboard
+        app.kubernetes.io/part-of: inferadb
+        app.kubernetes.io/managed-by: flux
     spec:
       serviceAccountName: inferadb-dashboard
       automountServiceAccountToken: false

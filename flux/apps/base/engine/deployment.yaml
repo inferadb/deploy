@@ -5,8 +5,11 @@ metadata:
   namespace: inferadb
   labels:
     app.kubernetes.io/name: inferadb-engine
+    app.kubernetes.io/instance: inferadb-engine
+    app.kubernetes.io/version: latest
     app.kubernetes.io/component: engine
     app.kubernetes.io/part-of: inferadb
+    app.kubernetes.io/managed-by: flux
 spec:
   replicas: 1
   strategy:
@@ -22,7 +25,11 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: inferadb-engine
+        app.kubernetes.io/instance: inferadb-engine
+        app.kubernetes.io/version: latest
         app.kubernetes.io/component: engine
+        app.kubernetes.io/part-of: inferadb
+        app.kubernetes.io/managed-by: flux
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8082"

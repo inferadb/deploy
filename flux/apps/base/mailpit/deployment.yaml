@@ -5,8 +5,11 @@ metadata:
   namespace: inferadb
   labels:
     app.kubernetes.io/name: mailpit
+    app.kubernetes.io/instance: mailpit
+    app.kubernetes.io/version: v1.28.0
     app.kubernetes.io/component: email
     app.kubernetes.io/part-of: inferadb
+    app.kubernetes.io/managed-by: flux
 spec:
   replicas: 1
   selector:
@@ -17,7 +20,11 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: mailpit
+        app.kubernetes.io/instance: mailpit
+        app.kubernetes.io/version: v1.28.0
         app.kubernetes.io/component: email
+        app.kubernetes.io/part-of: inferadb
+        app.kubernetes.io/managed-by: flux
     spec:
       automountServiceAccountToken: false
       securityContext:

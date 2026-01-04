@@ -17,8 +17,10 @@ metadata:
   labels:
     app.kubernetes.io/name: foundationdb
     app.kubernetes.io/instance: inferadb-fdb
+    app.kubernetes.io/version: "7.3.43"
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: inferadb
+    app.kubernetes.io/managed-by: flux
 spec:
   version: 7.3.43
 
@@ -53,7 +55,7 @@ spec:
           # (which doesn't support fsGroup properly on Talos)
           initContainers:
             - name: fix-permissions
-              image: busybox:1.36
+              image: busybox:1.37.0@sha256:d80cd694d3e9467884fcb94b8ca1e20437d8a501096cdf367a5a1918a34fc2fd
               command: ["sh", "-c", "chown -R 4059:4059 /var/fdb/data"]
               securityContext:
                 runAsUser: 0
