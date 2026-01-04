@@ -1,7 +1,10 @@
-# InferaDB Deployment Infrastructure
+<div align="center">
+    <p><a href="https://inferadb.com"><img src=".github/inferadb.png" width="100" /></a></p>
+    <h1>InferaDB Deployment</h1>
+    <p>Deployment infrastructure for InferaDB, supporting multi-environment, multi-region, and multi-provider deployments using GitOps principles</p>
+</div>
 
-This directory contains the deployment infrastructure for InferaDB, supporting multi-environment,
-multi-region, and multi-provider deployments using GitOps principles.
+<br />
 
 ## Architecture Overview
 
