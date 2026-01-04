@@ -1,6 +1,22 @@
-# Default: Engineering owns everything
-* @inferadb/engineering
+# CODEOWNERS - Automatic review assignment
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Security-sensitive areas require Security team review
+# Default: Platform team owns infrastructure
+* @inferadb/platform
+
+# Terraform requires platform + security review
+/terraform/ @inferadb/platform @inferadb/security
+
+# Kubernetes/Flux manifests
+/flux/ @inferadb/platform
+
+# Talos OS configuration
+/talos/ @inferadb/platform
+
+# Security-sensitive areas require Security team
 /policies/ @inferadb/security
-/scripts/ @inferadb/security
+/scripts/ @inferadb/security @inferadb/platform
+
+# Workflow changes require security review
+/.github/workflows/ @inferadb/security @inferadb/platform
+/.github/CODEOWNERS @inferadb/security

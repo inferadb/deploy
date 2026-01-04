@@ -31,6 +31,12 @@ regexes = [
   '''example[-_]?key''',
 ]
 
+# Specific commit fingerprints to allowlist (false positives)
+commits = [
+  # bootstrap-secrets.sh line 21: "=== Step 1: SOPS Age Key Generation ===" is documentation, not a secret
+  "6e6068fbc04b12132076a6039163124145f4b1ca",
+]
+
 # Additional rules to disable if causing false positives
 # [[rules]]
 # id = "some-rule-id"
