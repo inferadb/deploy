@@ -11,7 +11,7 @@ spec:
     # Allow traffic from engine
     - fromEndpoints:
         - matchLabels:
-            app: inferadb-engine
+            app.kubernetes.io/name: inferadb-engine
       toPorts:
         - ports:
             - port: "4500"

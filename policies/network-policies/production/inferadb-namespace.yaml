@@ -6,12 +6,12 @@ metadata:
 spec:
   endpointSelector:
     matchLabels:
-      app: inferadb-engine
+      app.kubernetes.io/name: inferadb-engine
   ingress:
     # Allow traffic from control plane
     - fromEndpoints:
         - matchLabels:
-            app: inferadb-control
+            app.kubernetes.io/name: inferadb-control
       toPorts:
         - ports:
             - port: "8080"
@@ -21,7 +21,7 @@ spec:
     # Allow traffic from other engine instances (mesh)
     - fromEndpoints:
         - matchLabels:
-            app: inferadb-engine
+            app.kubernetes.io/name: inferadb-engine
       toPorts:
         - ports:
             - port: "8082"
