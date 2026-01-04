@@ -103,11 +103,13 @@ Region modules provide provider-specific mappings for InferaDB regions.
 
 ## Machine Type Mappings
 
-| Size   | AWS          | GCP             | DigitalOcean  |
-|--------|--------------|-----------------|---------------|
-| small  | t3.medium    | e2-medium       | s-2vcpu-4gb   |
-| medium | t3.xlarge    | e2-standard-4   | s-4vcpu-8gb   |
-| large  | t3.2xlarge   | e2-standard-8   | s-8vcpu-16gb  |
+AWS uses Graviton (ARM64) instances for ~20% cost savings over x86.
+
+| Size   | AWS (Graviton) | GCP             | DigitalOcean  |
+|--------|----------------|-----------------|---------------|
+| small  | t4g.medium     | e2-medium       | s-2vcpu-4gb   |
+| medium | t4g.xlarge     | e2-standard-4   | s-4vcpu-8gb   |
+| large  | t4g.2xlarge    | e2-standard-8   | s-8vcpu-16gb  |
 
 ## Spot Instance Strategy
 

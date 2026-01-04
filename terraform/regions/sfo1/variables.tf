@@ -10,20 +10,20 @@ locals {
   }
 
   # Machine type mappings across providers
-  # Defines equivalent machine types for each provider
+  # AWS: Using Graviton (t4g) for ~20% cost savings over x86 (t3)
   machine_type_mappings = {
     small = {
-      aws          = "t3.medium"
+      aws          = "t4g.medium"
       gcp          = "e2-medium"
       digitalocean = "s-2vcpu-4gb"
     }
     medium = {
-      aws          = "t3.xlarge"
+      aws          = "t4g.xlarge"
       gcp          = "e2-standard-4"
       digitalocean = "s-4vcpu-8gb"
     }
     large = {
-      aws          = "t3.2xlarge"
+      aws          = "t4g.2xlarge"
       gcp          = "e2-standard-8"
       digitalocean = "s-8vcpu-16gb"
     }

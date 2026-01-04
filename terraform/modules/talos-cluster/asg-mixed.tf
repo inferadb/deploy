@@ -24,18 +24,18 @@ resource "aws_autoscaling_group" "workers_mixed" {
         version            = "$Latest"
       }
 
-      # Diversify instance types for better spot availability
-      # Use multiple instance types to reduce interruption risk
+      # Diversify Graviton instance types for better spot availability
+      # Use multiple ARM64 instance types to reduce interruption risk
       override {
-        instance_type     = "t3.xlarge"
+        instance_type     = "t4g.xlarge"
         weighted_capacity = 1
       }
       override {
-        instance_type     = "t3a.xlarge"
+        instance_type     = "m6g.xlarge"
         weighted_capacity = 1
       }
       override {
-        instance_type     = "t2.xlarge"
+        instance_type     = "c6g.xlarge"
         weighted_capacity = 1
       }
     }
