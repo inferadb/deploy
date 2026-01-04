@@ -1,22 +1,8 @@
 # CODEOWNERS - Automatic review assignment
 # See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Small team (1-3 engineers): Single owner for simplicity.
+# As team grows, consider splitting into platform/security teams.
 
-# Default: Platform team owns infrastructure
-* @inferadb/platform
-
-# Terraform requires platform + security review
-/terraform/ @inferadb/platform @inferadb/security
-
-# Kubernetes/Flux manifests
-/flux/ @inferadb/platform
-
-# Talos OS configuration
-/talos/ @inferadb/platform
-
-# Security-sensitive areas require Security team
-/policies/ @inferadb/security
-/scripts/ @inferadb/security @inferadb/platform
-
-# Workflow changes require security review
-/.github/workflows/ @inferadb/security @inferadb/platform
-/.github/CODEOWNERS @inferadb/security
+# All changes require team review
+* @inferadb/engineering
