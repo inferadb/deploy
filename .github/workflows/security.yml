@@ -111,7 +111,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Run Checkov on Terraform
-        uses: bridgecrewio/checkov-action@648d149c9f5e8e23be6a0c0c2faed8c5d8a715c1 # v12.2942.0
+        uses: bridgecrewio/checkov-action@v12
         with:
           directory: terraform/
           framework: terraform
@@ -121,7 +121,7 @@ jobs:
           skip_check: CKV_TF_1
 
       - name: Run Checkov on Kubernetes
-        uses: bridgecrewio/checkov-action@648d149c9f5e8e23be6a0c0c2faed8c5d8a715c1 # v12.2942.0
+        uses: bridgecrewio/checkov-action@v12
         with:
           directory: flux/
           framework: kubernetes

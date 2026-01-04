@@ -94,3 +94,8 @@ variable "tags" {
   description = "Additional tags to apply to resources"
   default     = {}
 }
+
+variable "cluster_endpoint_hostname" {
+  type        = string
+  description = "Pre-allocated hostname for cluster API endpoint (e.g., api.nyc1.inferadb.io). Required to break dependency cycle."
+}

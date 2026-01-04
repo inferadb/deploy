@@ -11,8 +11,13 @@ output "talosconfig" {
 }
 
 output "cluster_endpoint" {
-  description = "Kubernetes API endpoint"
+  description = "Kubernetes API endpoint hostname (pre-configured)"
   value       = local.cluster_endpoint
+}
+
+output "cluster_lb_address" {
+  description = "Load balancer address for DNS configuration. Create a CNAME/A record pointing cluster_endpoint to this value."
+  value       = local.cluster_lb_address
 }
 
 output "cluster_name" {

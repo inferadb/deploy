@@ -35,8 +35,13 @@ locals {
     }
   )
 
-  # Cluster endpoint - will be set by provider-specific modules
-  cluster_endpoint = var.provider_type == "aws" ? (
+  # Cluster endpoint - use pre-allocated hostname to break dependency cycle
+  # The hostname must be configured in DNS before provisioning (e.g., api.nyc1.inferadb.io)
+  # After LB creation, update DNS to point to the actual LB address
+  cluster_endpoint = var.cluster_endpoint_hostname
+
+  # Actual LB addresses - available after creation for DNS updates
+  cluster_lb_address = var.provider_type == "aws" ? (
     length(aws_lb.control_plane) > 0 ? aws_lb.control_plane[0].dns_name : ""
     ) : var.provider_type == "gcp" ? (
     length(google_compute_forwarding_rule.control_plane) > 0 ? google_compute_forwarding_rule.control_plane[0].ip_address : ""

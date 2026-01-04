@@ -44,11 +44,12 @@ Abstract module for provisioning Talos Linux Kubernetes clusters across multiple
 module "cluster" {
   source = "../../modules/talos-cluster"
 
-  cluster_name        = "inferadb-prod-nyc1"
-  provider_type       = "aws"
-  region              = "nyc1"
-  provider_region     = "us-east-1"
-  environment         = "production"
+  cluster_name              = "inferadb-prod-nyc1"
+  provider_type             = "aws"
+  region                    = "nyc1"
+  provider_region           = "us-east-1"
+  environment               = "production"
+  cluster_endpoint_hostname = "api.nyc1.inferadb.io"  # Pre-allocated DNS name
 
   control_plane_count = 3
   worker_count        = 5
@@ -61,7 +62,12 @@ module "cluster" {
   vpc_id             = "vpc-xxxxx"
   subnet_ids         = ["subnet-a", "subnet-b", "subnet-c"]
 }
+
+# After apply, update DNS:
+# terraform output cluster_lb_address → Create CNAME to this value
 ```
+
+**Important**: The `cluster_endpoint_hostname` must be a pre-allocated DNS name that will resolve to the cluster's load balancer. After running `terraform apply`, use the `cluster_lb_address` output to configure your DNS records.
 
 ## Regions
 
