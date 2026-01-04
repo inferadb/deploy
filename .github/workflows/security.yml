@@ -118,6 +118,8 @@ jobs:
           output_format: sarif
           output_file_path: checkov-terraform.sarif
           soft_fail: true
+          compact: true
+          quiet: true
           skip_check: CKV_TF_1
 
       - name: Run Checkov on Kubernetes
@@ -128,8 +130,10 @@ jobs:
           output_format: sarif
           output_file_path: checkov-kubernetes.sarif
           soft_fail: true
-          # Skip Flux-generated gotk-components (vendor code we don't control)
-          skip_path: flux/clusters/dev-local/flux-system/gotk-components.yaml,flux/clusters/staging/flux-system/gotk-components.yaml,flux/clusters/production/flux-system/gotk-components.yaml
+          compact: true
+          quiet: true
+          # Skip Flux-generated gotk-components and flux-system directories (vendor code)
+          skip_path: flux/clusters/dev-local/flux-system,flux/clusters/staging/flux-system,flux/clusters/production/flux-system
 
       - name: Upload Checkov Terraform results
         uses: github/codeql-action/upload-sarif@v3
