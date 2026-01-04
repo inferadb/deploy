@@ -41,7 +41,7 @@ deploy/
 
 ### Local Development
 
-Use the InferaDB CLI for local development:
+Use the [InferaDB CLI](https://github.com/inferadb/cli) for local development:
 
 ```bash
 # Create local Talos cluster and deploy full InferaDB stack
@@ -148,5 +148,3 @@ All changes require PR review. CI runs automatically on push/PR:
 - **Terraform**: Format and validate checks
 - **Kubernetes**: YAML lint and Kustomize build validation
 - **Security**: Trivy, Checkov, KICS, and Gitleaks scans
-
-See [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) for the full architecture specification.
