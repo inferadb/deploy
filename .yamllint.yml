@@ -1,0 +1,104 @@
+# yamllint configuration
+# See: https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+yaml-files:
+  - "*.yaml"
+  - "*.yml"
+  - ".yamllint"
+
+rules:
+  # Line length - allow longer lines for Kubernetes manifests
+  line-length:
+    max: 200
+    level: warning
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+
+  # Truthy values - be strict about boolean values
+  truthy:
+    allowed-values: ["true", "false", "yes", "no"]
+    check-keys: false
+
+  # Comments formatting
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 1
+
+  # Document start marker - disable (Kubernetes doesn't require it)
+  document-start: disable
+
+  # Indentation - 2 spaces, consistent sequences
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+    check-multi-line-strings: false
+
+  # Brackets - allow inline for short lists
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Braces - allow inline for short maps
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Colons - consistent spacing
+  colons:
+    max-spaces-before: 0
+    max-spaces-after: 1
+
+  # Commas - consistent spacing
+  commas:
+    max-spaces-before: 0
+    min-spaces-after: 1
+    max-spaces-after: 1
+
+  # Hyphens - consistent spacing
+  hyphens:
+    max-spaces-after: 1
+
+  # Empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+
+  # Empty values - allow (common in Kubernetes)
+  empty-values: enable
+
+  # Key duplicates - error
+  key-duplicates: enable
+
+  # Key ordering - disable (not practical for Kubernetes)
+  key-ordering: disable
+
+  # New line at end of file
+  new-line-at-end-of-file: enable
+
+  # New lines
+  new-lines:
+    type: unix
+
+  # Octal values - disable (allow for file permissions)
+  octal-values: disable
+
+  # Quoted strings - disable (too restrictive)
+  quoted-strings: disable
+
+# Ignore certain paths
+ignore: |
+  # Flux generated files
+  flux/**/gotk-components.yaml
+  flux/**/gotk-sync.yaml
+
+  # Test results
+  load-tests/results/
+
+  # Certificates
+  certs/
+
+  # Node modules (if any)
+  node_modules/

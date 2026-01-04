@@ -1,0 +1,50 @@
+# Label definitions for the labeler workflow
+# See: https://github.com/actions/labeler
+#
+# Labels must exist in the repository (managed by labels.sh)
+# Uses area/ prefix convention consistent with labels.sh
+
+area/terraform:
+  - changed-files:
+      - any-glob-to-any-file: "terraform/**/*"
+
+area/k8s:
+  - changed-files:
+      - any-glob-to-any-file: "flux/**/*"
+
+area/talos:
+  - changed-files:
+      - any-glob-to-any-file: "talos/**/*"
+
+area/policies:
+  - changed-files:
+      - any-glob-to-any-file: "policies/**/*"
+
+area/scripts:
+  - changed-files:
+      - any-glob-to-any-file: "scripts/**/*"
+
+area/alerts:
+  - changed-files:
+      - any-glob-to-any-file: "alerts/**/*"
+
+area/slos:
+  - changed-files:
+      - any-glob-to-any-file: "slos/**/*"
+
+area/runbooks:
+  - changed-files:
+      - any-glob-to-any-file: "runbooks/**/*"
+
+area/docs:
+  - changed-files:
+      - any-glob-to-any-file: "**/*.md"
+      - any-glob-to-any-file: "docs/**/*"
+
+area/load-tests:
+  - changed-files:
+      - any-glob-to-any-file: "load-tests/**/*"
+
+area/ci:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**/*"

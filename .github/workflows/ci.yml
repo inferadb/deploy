@@ -1,0 +1,341 @@
+# yaml-language-server: $schema=https://www.schemastore.org/github-workflow.json
+#
+# Security Review: This workflow does NOT use any untrusted user inputs in run commands.
+# All GitHub context usage is limited to safe values: needs.*.result, steps.*.outcome,
+# github.event_name, github.ref, and secrets.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for PRs, queue for main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Default to read-only permissions
+permissions:
+  contents: read
+
+jobs:
+  # Detect which file types changed
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      terraform: ${{ steps.filter.outputs.terraform }}
+      kubernetes: ${{ steps.filter.outputs.kubernetes }}
+      scripts: ${{ steps.filter.outputs.scripts }}
+      talos: ${{ steps.filter.outputs.talos }}
+      policies: ${{ steps.filter.outputs.policies }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Check for changes
+        id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**/*.tf'
+              - 'terraform/**/*.tfvars'
+              - '.tflint.hcl'
+            kubernetes:
+              - 'flux/**/*.yaml'
+              - 'flux/**/*.yml'
+            scripts:
+              - 'scripts/**/*.sh'
+            talos:
+              - 'talos/**/*.yaml'
+              - 'talos/**/*.yml'
+            policies:
+              - 'policies/**/*.yaml'
+              - 'policies/**/*.yml'
+
+  # Terraform validation
+  terraform-validate:
+    name: Terraform Validation
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Check formatting
+        id: fmt
+        run: terraform fmt -check -recursive -diff terraform/
+        continue-on-error: true
+
+      - name: Initialize and validate modules
+        id: validate
+        run: |
+          validation_failed=0
+          for dir in terraform/modules/*/; do
+            echo "::group::Validating $dir"
+            if ! terraform -chdir="$dir" init -backend=false -input=false; then
+              echo "::error::Failed to init $dir"
+              validation_failed=1
+            elif ! terraform -chdir="$dir" validate; then
+              echo "::error::Validation failed for $dir"
+              validation_failed=1
+            else
+              echo "Validation passed for $dir"
+            fi
+            echo "::endgroup::"
+          done
+          exit $validation_failed
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4.1.1
+        with:
+          tflint_version: v0.55.0
+
+      - name: Initialize TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        id: tflint
+        run: tflint --recursive --format compact terraform/
+        continue-on-error: true
+
+      - name: Fail if format check failed
+        if: steps.fmt.outcome == 'failure'
+        run: |
+          echo "::error::Terraform formatting check failed. Run 'terraform fmt -recursive' to fix."
+          exit 1
+
+  # Kubernetes/Flux manifest validation
+  kubernetes-validate:
+    name: Kubernetes Validation
+    needs: changes
+    if: needs.changes.outputs.kubernetes == 'true' || needs.changes.outputs.policies == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Python (for yamllint)
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Install Kustomize
+        uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2.1.0
+
+      - name: Install kubeconform
+        run: |
+          wget -q https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar xf kubeconform-linux-amd64.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: YAML Lint
+        run: yamllint -c .yamllint.yml flux/ talos/ policies/
+
+      - name: Kustomize build validation
+        run: |
+          build_failed=0
+          for cluster in flux/clusters/*/; do
+            echo "::group::Building kustomization for $cluster"
+            if ! kustomize build "$cluster" > /tmp/built.yaml 2>&1; then
+              echo "::error::Kustomize build failed for $cluster"
+              cat /tmp/built.yaml
+              build_failed=1
+            else
+              echo "Build successful for $cluster"
+              # Validate built manifests
+              if ! kubeconform -strict -ignore-missing-schemas /tmp/built.yaml; then
+                echo "::warning::Some manifests have schema warnings in $cluster"
+              fi
+            fi
+            echo "::endgroup::"
+          done
+          exit $build_failed
+
+      - name: Validate NetworkPolicies
+        run: |
+          echo "Validating NetworkPolicy manifests..."
+          find policies/network-policies -name "*.yaml" -exec kubeconform -strict {} \;
+
+  # Shell script validation
+  scripts-validate:
+    name: Scripts Validation
+    needs: changes
+    if: needs.changes.outputs.scripts == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+        with:
+          scandir: "./scripts"
+          severity: warning
+
+      - name: Shell syntax check
+        run: |
+          echo "Checking shell script syntax..."
+          find scripts -name "*.sh" -print0 | xargs -0 -I {} bash -n {}
+          echo "All scripts have valid syntax"
+
+  # Talos configuration validation
+  talos-validate:
+    name: Talos Validation
+    needs: changes
+    if: needs.changes.outputs.talos == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Python (for yamllint)
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Validate Talos YAML syntax
+        run: yamllint -c .yamllint.yml talos/
+
+      - name: Install talosctl
+        run: |
+          curl -sL https://talos.dev/install | sh
+
+      - name: Validate talconfig structure
+        run: |
+          echo "Validating Talos configuration structure..."
+          if [ -f "talos/talconfig.yaml" ]; then
+            python3 -c "import yaml; yaml.safe_load(open('talos/talconfig.yaml'))"
+            echo "talconfig.yaml is valid YAML"
+          fi
+
+  # Kyverno policy validation
+  policy-validate:
+    name: Policy Validation
+    needs: changes
+    if: needs.changes.outputs.policies == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Kyverno CLI
+        run: |
+          curl -LO https://github.com/kyverno/kyverno/releases/download/v1.13.4/kyverno-cli_v1.13.4_linux_x86_64.tar.gz
+          tar -xvf kyverno-cli_v1.13.4_linux_x86_64.tar.gz
+          sudo mv kyverno /usr/local/bin/
+
+      - name: Validate Kyverno policies
+        run: |
+          echo "Validating Kyverno policies..."
+          for policy in policies/kyverno/*.yaml; do
+            echo "Validating $policy"
+            kyverno validate "$policy"
+          done
+
+  # Overall status check - required for branch protection
+  ci-success:
+    name: CI Success
+    needs:
+      [
+        changes,
+        terraform-validate,
+        kubernetes-validate,
+        scripts-validate,
+        talos-validate,
+        policy-validate,
+      ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: always()
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Check all jobs
+        env:
+          TERRAFORM_RESULT: ${{ needs.terraform-validate.result }}
+          KUBERNETES_RESULT: ${{ needs.kubernetes-validate.result }}
+          SCRIPTS_RESULT: ${{ needs.scripts-validate.result }}
+          TALOS_RESULT: ${{ needs.talos-validate.result }}
+          POLICIES_RESULT: ${{ needs.policy-validate.result }}
+        run: |
+          echo "Job Results:"
+          echo "  Terraform: $TERRAFORM_RESULT"
+          echo "  Kubernetes: $KUBERNETES_RESULT"
+          echo "  Scripts: $SCRIPTS_RESULT"
+          echo "  Talos: $TALOS_RESULT"
+          echo "  Policies: $POLICIES_RESULT"
+
+          # Check for failures (skipped is OK - means no relevant changes)
+          for result in "$TERRAFORM_RESULT" "$KUBERNETES_RESULT" "$SCRIPTS_RESULT" "$TALOS_RESULT" "$POLICIES_RESULT"; do
+            if [[ "$result" == "failure" ]]; then
+              echo "::error::One or more validation jobs failed"
+              exit 1
+            fi
+          done
+
+          echo "All validation checks passed!"

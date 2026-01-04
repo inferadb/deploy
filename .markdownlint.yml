@@ -1,0 +1,34 @@
+# Markdownlint configuration
+# See: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Default state for all rules
+default: true
+
+# MD013 - Line length (disabled - let editors handle wrapping)
+MD013: false
+
+# MD024 - Multiple headings with same content (allow in different sections)
+MD024:
+  siblings_only: true
+
+# MD033 - Inline HTML (allow for complex formatting)
+MD033: false
+
+# MD041 - First line should be a top level heading (disabled for fragments)
+MD041: false
+
+# MD046 - Code block style (fenced with backticks)
+MD046:
+  style: fenced
+
+# MD048 - Code fence style (backticks)
+MD048:
+  style: backtick
+
+# MD049 - Emphasis style (asterisks)
+MD049:
+  style: asterisk
+
+# MD050 - Strong style (asterisks)
+MD050:
+  style: asterisk

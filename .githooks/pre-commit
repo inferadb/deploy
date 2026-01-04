@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook for deploy repository
+# Install: git config core.hooksPath .githooks
+#
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+# Track if any check fails
+FAILED=0
+
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+echo "Running pre-commit checks..."
+
+# ------------------------------------------------------------------------------
+# Terraform formatting
+# ------------------------------------------------------------------------------
+TF_FILES=$(echo "$STAGED_FILES" | grep '\.tf$' || true)
+if [ -n "$TF_FILES" ]; then
+  echo -n "Checking Terraform formatting... "
+  if command -v terraform &> /dev/null; then
+    if terraform fmt -check -recursive terraform/ > /dev/null 2>&1; then
+      echo -e "${GREEN}OK${NC}"
+    else
+      echo -e "${RED}FAILED${NC}"
+      echo "  Run: terraform fmt -recursive terraform/"
+      FAILED=1
+    fi
+  else
+    echo -e "${YELLOW}SKIPPED${NC} (terraform not installed)"
+  fi
+fi
+
+# ------------------------------------------------------------------------------
+# YAML linting
+# ------------------------------------------------------------------------------
+YAML_FILES=$(echo "$STAGED_FILES" | grep -E '\.(yaml|yml)$' || true)
+if [ -n "$YAML_FILES" ]; then
+  echo -n "Checking YAML syntax... "
+  if command -v yamllint &> /dev/null; then
+    if echo "$YAML_FILES" | xargs yamllint -c .yamllint.yml > /dev/null 2>&1; then
+      echo -e "${GREEN}OK${NC}"
+    else
+      echo -e "${RED}FAILED${NC}"
+      echo "  Run: yamllint -c .yamllint.yml <files>"
+      FAILED=1
+    fi
+  else
+    echo -e "${YELLOW}SKIPPED${NC} (yamllint not installed)"
+  fi
+fi
+
+# ------------------------------------------------------------------------------
+# Shell script linting
+# ------------------------------------------------------------------------------
+SH_FILES=$(echo "$STAGED_FILES" | grep '\.sh$' || true)
+if [ -n "$SH_FILES" ]; then
+  echo -n "Checking shell scripts... "
+  if command -v shellcheck &> /dev/null; then
+    if echo "$SH_FILES" | xargs shellcheck --severity=warning > /dev/null 2>&1; then
+      echo -e "${GREEN}OK${NC}"
+    else
+      echo -e "${RED}FAILED${NC}"
+      echo "  Run: shellcheck --severity=warning <files>"
+      FAILED=1
+    fi
+  else
+    echo -e "${YELLOW}SKIPPED${NC} (shellcheck not installed)"
+  fi
+fi
+
+# ------------------------------------------------------------------------------
+# Secret detection
+# ------------------------------------------------------------------------------
+echo -n "Checking for secrets... "
+if command -v gitleaks &> /dev/null; then
+  if gitleaks protect --staged --no-banner > /dev/null 2>&1; then
+    echo -e "${GREEN}OK${NC}"
+  else
+    echo -e "${RED}FAILED${NC}"
+    echo "  Potential secrets detected! Run: gitleaks protect --staged"
+    FAILED=1
+  fi
+else
+  echo -e "${YELLOW}SKIPPED${NC} (gitleaks not installed)"
+fi
+
+# ------------------------------------------------------------------------------
+# Trailing whitespace
+# ------------------------------------------------------------------------------
+echo -n "Checking for trailing whitespace... "
+if git diff --cached --check > /dev/null 2>&1; then
+  echo -e "${GREEN}OK${NC}"
+else
+  echo -e "${YELLOW}WARNING${NC} (trailing whitespace detected)"
+fi
+
+# ------------------------------------------------------------------------------
+# Result
+# ------------------------------------------------------------------------------
+echo ""
+if [ $FAILED -eq 1 ]; then
+  echo -e "${RED}Pre-commit checks failed.${NC} Fix the issues above or commit with --no-verify to skip."
+  exit 1
+else
+  echo -e "${GREEN}All checks passed.${NC}"
+  exit 0
+fi

@@ -1,1 +1,6 @@
-* @inferadb/engineering-team
+# Default: Engineering owns everything
+* @inferadb/engineering
+
+# Security-sensitive areas require Security team review
+/policies/ @inferadb/security
+/scripts/ @inferadb/security

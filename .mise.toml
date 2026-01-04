@@ -9,7 +9,8 @@
 kubectl = "1.32"
 
 # Infrastructure as Code
-terraform = "1.14"
+terraform = "1.10"
+tflint = "0.55"
 
 # Talos Linux
 talosctl = "1.8"
@@ -30,6 +31,11 @@ helm = "3"
 
 # GitHub CLI (for PR automation)
 github-cli = "2"
+
+# Validation tools (used by .githooks/pre-commit)
+shellcheck = "0.10"
+gitleaks = "8.21"
+"pipx:yamllint" = "latest"
 
 [env]
 # Talos configuration
@@ -59,11 +65,21 @@ echo "Secrets:"
 echo "  age:       $(age --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "  sops:      $(sops --version 2>/dev/null | head -1 || echo 'NOT INSTALLED')"
 echo ""
+echo "Validation:"
+echo "  tflint:     $(tflint --version 2>/dev/null | head -1 || echo 'NOT INSTALLED')"
+echo "  shellcheck: $(shellcheck --version 2>/dev/null | grep version: || echo 'NOT INSTALLED')"
+echo "  gitleaks:   $(gitleaks version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "  yamllint:   $(yamllint --version 2>/dev/null || echo 'NOT INSTALLED (pip install yamllint)')"
+echo ""
 echo "Other:"
 echo "  helm:      $(helm version --short 2>/dev/null || echo 'NOT INSTALLED')"
 echo "  gh:        $(gh --version 2>/dev/null | head -1 || echo 'NOT INSTALLED')"
 echo "  docker:    $(docker --version 2>/dev/null || echo 'NOT INSTALLED')"
 """
+
+[tasks.init-tflint]
+description = "Initialize TFLint plugins"
+run = "tflint --init"
 
 [tasks.dev-up]
 description = "Start local development cluster"

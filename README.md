@@ -123,6 +123,27 @@ kubectl port-forward -n inferadb svc/inferadb-dashboard 3000:3000
 - [Full Region Failover](runbooks/full-region-failover.md)
 - [Break-Glass Procedures](runbooks/break-glass-procedures.md)
 
+## Development Setup
+
+Enable git hooks for local validation:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Required tools (install via `.mise.toml` or manually):
+
+- `terraform` - Terraform formatting
+- `yamllint` - YAML linting (`pip install yamllint`)
+- `shellcheck` - Shell script linting
+- `gitleaks` - Secret detection
+
 ## Contributing
+
+All changes require PR review. CI runs automatically on push/PR:
+
+- **Terraform**: Format and validate checks
+- **Kubernetes**: YAML lint and Kustomize build validation
+- **Security**: Trivy, Checkov, KICS, and Gitleaks scans
 
 See [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) for the full architecture specification.

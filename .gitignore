@@ -1,4 +1,56 @@
+# Certificates and secrets
 certs/
+*.pem
+*.key
+*.crt
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# Talos
+talosconfig
+kubeconfig
+*.talosconfig
+*.kubeconfig
+
+# SOPS
+*.dec
+*.decrypted
+*.unencrypted
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Test artifacts
+load-tests/results/*.json
+load-tests/results/*.html
+
+# TFLint plugin cache
+.tflint.d/
+
+# Large planning documents (regenerated)
 DEPLOYMENT_PLAN.md
 PHASE1_COMPLETE.md
