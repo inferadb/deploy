@@ -2,10 +2,10 @@
 # See: https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/config.md
 
 config {
-  format     = "compact"
-  module     = true
-  force      = false
-  plugin_dir = "~/.tflint.d/plugins"
+  format           = "compact"
+  call_module_type = "local"  # Inspect local modules only (was 'module = true' before v0.54)
+  force            = false
+  plugin_dir       = "~/.tflint.d/plugins"
 }
 
 # Terraform plugin - general best practices
