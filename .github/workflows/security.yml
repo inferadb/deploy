@@ -10,6 +10,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    # Manual trigger from GitHub UI (runs on selected branch, typically main)
   schedule:
     # Run weekly on Monday at 6am UTC for drift detection
     - cron: "0 6 * * 1"

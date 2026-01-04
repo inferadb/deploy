@@ -11,6 +11,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    # Manual trigger from GitHub UI (runs on selected branch, typically main)
 
 # Cancel in-progress runs for PRs, queue for main
 concurrency:
