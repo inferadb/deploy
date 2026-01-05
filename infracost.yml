@@ -88,6 +88,11 @@ projects:
     name: production-aws
     terraform_vars:
       provider_type: aws
+      # Placeholder values for cost estimation (actual values come from deployment)
+      vpc_id_nyc1: vpc-placeholder
+      vpc_id_sfo1: vpc-placeholder
+      subnet_ids_nyc1: '["subnet-a", "subnet-b", "subnet-c"]'
+      subnet_ids_sfo1: '["subnet-a", "subnet-b", "subnet-c"]'
     dependency_paths:
       - "terraform/modules/**"
       - "terraform/regions/**"
@@ -97,6 +102,11 @@ projects:
     name: production-gcp
     terraform_vars:
       provider_type: gcp
+      # Placeholder values for cost estimation (actual values come from deployment)
+      vpc_id_nyc1: vpc-placeholder
+      vpc_id_sfo1: vpc-placeholder
+      subnet_ids_nyc1: '["subnet-a", "subnet-b", "subnet-c"]'
+      subnet_ids_sfo1: '["subnet-a", "subnet-b", "subnet-c"]'
     dependency_paths:
       - "terraform/modules/**"
       - "terraform/regions/**"
