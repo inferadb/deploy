@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inferadb-engine
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-engine
+    app.kubernetes.io/component: engine
+    app.kubernetes.io/part-of: inferadb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inferadb-engine
+      app.kubernetes.io/component: engine

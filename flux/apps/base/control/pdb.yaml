@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inferadb-control
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-control
+    app.kubernetes.io/component: control
+    app.kubernetes.io/part-of: inferadb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inferadb-control
+      app.kubernetes.io/component: control

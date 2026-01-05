@@ -182,6 +182,46 @@ patches:
         path: /data/CONTROL_API_AUDIENCE
         value: "http://dev-inferadb-control.inferadb:9092"
 
+# Disable HPA for dev (single replica, no autoscaling needed)
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: inferadb-engine
+    patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: inferadb-engine
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: inferadb-control
+    patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: inferadb-control
+
+  # Disable PDB for dev (single replica, would block all evictions)
+  - target:
+      kind: PodDisruptionBudget
+      name: inferadb-engine
+    patch: |-
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: inferadb-engine
+  - target:
+      kind: PodDisruptionBudget
+      name: inferadb-control
+    patch: |-
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: inferadb-control
+
 # Dev-specific labels
 labels:
   - pairs:

@@ -5,6 +5,8 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
+  - hpa.yaml
+  - pdb.yaml
 labels:
   - pairs:
       app.kubernetes.io/managed-by: flux
