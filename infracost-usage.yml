@@ -1,0 +1,55 @@
+# Infracost Usage File
+# Provides usage estimates for resources with variable/usage-based pricing
+#
+# Documentation: https://www.infracost.io/docs/features/usage_based_resources/
+#
+# These estimates are used for cost forecasting. Adjust based on your actual
+# or expected usage patterns.
+
+version: 0.1
+
+resource_type_default_usage:
+  #
+  # AWS Network Load Balancer
+  # LCU = Load Balancer Capacity Units (based on new connections, active connections, and bandwidth)
+  #
+  aws_lb:
+    monthly_data_processed_gb: 100          # GB of data processed per month
+    load_balancer_capacity_units: 10        # Average LCUs per hour
+
+  #
+  # AWS Autoscaling Group (for data transfer estimation)
+  #
+  aws_autoscaling_group:
+    monthly_data_transfer_out_gb: 50        # GB of outbound data transfer
+
+  #
+  # GCP Forwarding Rule (Load Balancer)
+  # Used by Kubernetes API server load balancers
+  #
+  google_compute_forwarding_rule:
+    monthly_ingress_data_gb: 50             # GB of ingress data per month
+
+  #
+  # GCP Compute Instances (for sustained use discounts)
+  #
+  google_compute_instance:
+    monthly_hours: 730                      # Full month usage (enables sustained use discount)
+
+resource_usage:
+  #
+  # Production environments have higher traffic
+  #
+  module.production_nyc1.aws_lb.control_plane[0]:
+    monthly_data_processed_gb: 500
+    load_balancer_capacity_units: 25
+
+  module.production_sfo1.aws_lb.control_plane[0]:
+    monthly_data_processed_gb: 500
+    load_balancer_capacity_units: 25
+
+  module.production_nyc1.google_compute_forwarding_rule.control_plane[0]:
+    monthly_ingress_data_gb: 200
+
+  module.production_sfo1.google_compute_forwarding_rule.control_plane[0]:
+    monthly_ingress_data_gb: 200

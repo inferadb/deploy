@@ -7,6 +7,9 @@
 #
 # For CI/CD:
 #   infracost breakdown --config-file infracost.yml --format json --out-file infracost.json
+#
+# Usage estimates for variable-cost resources are defined in infracost-usage.yml
+# Run with: infracost breakdown --config-file=infracost.yml --usage-file=infracost-usage.yml
 
 version: 0.1
 

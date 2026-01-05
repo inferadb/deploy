@@ -71,6 +71,7 @@ jobs:
         run: |
           infracost breakdown \
             --config-file=infracost.yml \
+            --usage-file=infracost-usage.yml \
             --format=json \
             --out-file=/tmp/infracost-base.json
 
@@ -90,6 +91,7 @@ jobs:
         run: |
           infracost diff \
             --config-file=infracost.yml \
+            --usage-file=infracost-usage.yml \
             --format=json \
             --compare-to=/tmp/infracost-base.json \
             --out-file=/tmp/infracost-diff.json
@@ -137,6 +139,7 @@ jobs:
         run: |
           infracost breakdown \
             --config-file=infracost.yml \
+            --usage-file=infracost-usage.yml \
             --format=table
 
       - name: Upload to Infracost Cloud
