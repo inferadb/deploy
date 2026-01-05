@@ -27,11 +27,12 @@ variable "provider_type" {
 module "production_nyc1" {
   source = "../../modules/talos-cluster"
 
-  cluster_name    = "inferadb-prod-nyc1"
-  provider_type   = var.provider_type
-  region          = "nyc1"
-  provider_region = lookup(module.nyc1_config.region_mappings, var.provider_type, "us-east-1")
-  environment     = "production"
+  cluster_name              = "inferadb-prod-nyc1"
+  cluster_endpoint_hostname = var.cluster_endpoint_hostname_nyc1
+  provider_type             = var.provider_type
+  region                    = "nyc1"
+  provider_region           = lookup(local.nyc1_config.region_mappings, var.provider_type, "us-east-1")
+  environment               = "production"
 
   # Production configuration - high availability
   control_plane_count = 3
@@ -64,11 +65,12 @@ module "production_nyc1" {
 module "production_sfo1" {
   source = "../../modules/talos-cluster"
 
-  cluster_name    = "inferadb-prod-sfo1"
-  provider_type   = var.provider_type
-  region          = "sfo1"
-  provider_region = lookup(module.sfo1_config.region_mappings, var.provider_type, "us-west-1")
-  environment     = "production"
+  cluster_name              = "inferadb-prod-sfo1"
+  cluster_endpoint_hostname = var.cluster_endpoint_hostname_sfo1
+  provider_type             = var.provider_type
+  region                    = "sfo1"
+  provider_region           = lookup(local.sfo1_config.region_mappings, var.provider_type, "us-west-1")
+  environment               = "production"
 
   # Production configuration - high availability
   control_plane_count = 3
@@ -96,16 +98,30 @@ module "production_sfo1" {
   }
 }
 
-# Region configurations
-module "nyc1_config" {
-  source = "../../regions/nyc1"
+# Load all region configurations (consolidated module)
+module "regions" {
+  source = "../../modules/regions"
 }
 
-module "sfo1_config" {
-  source = "../../regions/sfo1"
+# Select the appropriate region configs
+locals {
+  nyc1_config = module.regions.all["nyc1"]
+  sfo1_config = module.regions.all["sfo1"]
 }
 
 # Variables
+variable "cluster_endpoint_hostname_nyc1" {
+  type        = string
+  description = "Pre-allocated hostname for NYC1 cluster API endpoint"
+  default     = "api.nyc1.inferadb.io"
+}
+
+variable "cluster_endpoint_hostname_sfo1" {
+  type        = string
+  description = "Pre-allocated hostname for SFO1 cluster API endpoint"
+  default     = "api.sfo1.inferadb.io"
+}
+
 variable "vpc_id_nyc1" {
   type        = string
   description = "VPC ID for NYC1 cluster"

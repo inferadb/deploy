@@ -12,9 +12,10 @@ terraform/
 │   ├── dev/          # Development environment
 │   ├── staging/      # Staging environment
 │   └── production/   # Production environment
-└── regions/          # Regional configuration mappings
-    ├── nyc1/         # New York City region
-    └── sfo1/         # San Francisco region
+└── modules/
+    ├── regions/      # Consolidated regional configuration mappings
+    ├── talos-cluster/ # Talos Kubernetes cluster module
+    └── ...           # Other infrastructure modules
 ```
 
 ## Modules
@@ -184,19 +185,40 @@ backend "s3" {
 
 ## Adding a New Region
 
-1. Create region directory:
-   ```bash
-   cp -r regions/_template regions/new-region
+1. Edit the consolidated regions module at `modules/regions/main.tf`:
+   ```hcl
+   # Add new region configuration in locals block
+   new_region = {
+     region_mappings = {
+       aws          = "us-west-2"
+       gcp          = "us-west2"
+       digitalocean = "sfo3"
+     }
+     machine_type_mappings = {
+       small  = { aws = "t4g.medium", gcp = "e2-medium", digitalocean = "s-2vcpu-4gb" }
+       medium = { aws = "t4g.xlarge", gcp = "e2-standard-4", digitalocean = "s-4vcpu-8gb" }
+       large  = { aws = "t4g.2xlarge", gcp = "e2-standard-8", digitalocean = "s-8vcpu-16gb" }
+     }
+     region_config = {
+       name         = "new-region"
+       display_name = "New Region Display Name"
+       primary      = false
+     }
+   }
    ```
 
-2. Update `variables.tf`:
-   - Set region mappings for each provider
-   - Configure machine type mappings (if needed)
+2. Add to the `all_regions` map in the same file:
+   ```hcl
+   all_regions = {
+     nyc1       = local.nyc1
+     sfo1       = local.sfo1
+     new_region = local.new_region
+   }
+   ```
 
-3. Create outputs.tf:
-   - Export region_mappings and machine_type_mappings
+3. Add outputs in `modules/regions/outputs.tf` if direct access is needed
 
-4. Reference in environment configurations
+4. Reference in environment configurations using `module.regions.all["new-region"]`
 
 ## Security Considerations
 

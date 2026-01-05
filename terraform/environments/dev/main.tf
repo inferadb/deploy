@@ -24,20 +24,32 @@ variable "region" {
   default     = "nyc1"
 }
 
-# Load region-specific variables
-module "region_config" {
-  source = "../../regions/${var.region}"
+variable "cluster_endpoint_hostname" {
+  type        = string
+  description = "Pre-allocated hostname for cluster API endpoint (e.g., api.dev.inferadb.io)"
+  default     = "api.dev.inferadb.io"
+}
+
+# Load all region configurations (static module source)
+module "regions" {
+  source = "../../modules/regions"
+}
+
+# Select the appropriate region config based on variable
+locals {
+  region_config = module.regions.all[var.region]
 }
 
 # Development cluster configuration
 module "dev_cluster" {
   source = "../../modules/talos-cluster"
 
-  cluster_name    = "inferadb-dev"
-  provider_type   = var.provider_type
-  region          = var.region
-  provider_region = module.region_config.region_mappings[var.provider_type]
-  environment     = "dev"
+  cluster_name              = "inferadb-dev"
+  cluster_endpoint_hostname = var.cluster_endpoint_hostname
+  provider_type             = var.provider_type
+  region                    = var.region
+  provider_region           = local.region_config.region_mappings[var.provider_type]
+  environment               = "dev"
 
   # Minimal resources for development
   control_plane_count = 1

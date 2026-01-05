@@ -28,20 +28,39 @@ variable "region" {
   default     = "nyc1"
 }
 
-# Load region-specific variables
-module "region_config" {
-  source = "../../regions/${var.region}"
+variable "cluster_endpoint_hostname_nyc1" {
+  type        = string
+  description = "Pre-allocated hostname for NYC1 cluster API endpoint"
+  default     = "api.staging-nyc1.inferadb.io"
+}
+
+variable "cluster_endpoint_hostname_sfo1" {
+  type        = string
+  description = "Pre-allocated hostname for SFO1 cluster API endpoint"
+  default     = "api.staging-sfo1.inferadb.io"
+}
+
+# Load all region configurations (static module source)
+module "regions" {
+  source = "../../modules/regions"
+}
+
+# Select the appropriate region configs
+locals {
+  nyc1_config = module.regions.all["nyc1"]
+  sfo1_config = module.regions.all["sfo1"]
 }
 
 # Staging NYC1 cluster
 module "staging_nyc1" {
   source = "../../modules/talos-cluster"
 
-  cluster_name    = "inferadb-staging-nyc1"
-  provider_type   = var.provider_type
-  region          = "nyc1"
-  provider_region = lookup(module.region_config.region_mappings, var.provider_type, "us-east-1")
-  environment     = "staging"
+  cluster_name              = "inferadb-staging-nyc1"
+  cluster_endpoint_hostname = var.cluster_endpoint_hostname_nyc1
+  provider_type             = var.provider_type
+  region                    = "nyc1"
+  provider_region           = lookup(local.nyc1_config.region_mappings, var.provider_type, "us-east-1")
+  environment               = "staging"
 
   # Production-like configuration but smaller
   control_plane_count = 3
@@ -73,11 +92,12 @@ module "staging_sfo1" {
   source = "../../modules/talos-cluster"
   count  = var.enable_multi_region ? 1 : 0
 
-  cluster_name    = "inferadb-staging-sfo1"
-  provider_type   = var.provider_type
-  region          = "sfo1"
-  provider_region = lookup(module.sfo1_config.region_mappings, var.provider_type, "us-west-1")
-  environment     = "staging"
+  cluster_name              = "inferadb-staging-sfo1"
+  cluster_endpoint_hostname = var.cluster_endpoint_hostname_sfo1
+  provider_type             = var.provider_type
+  region                    = "sfo1"
+  provider_region           = lookup(local.sfo1_config.region_mappings, var.provider_type, "us-west-1")
+  environment               = "staging"
 
   # Production-like configuration but smaller
   control_plane_count = 3
@@ -102,11 +122,6 @@ module "staging_sfo1" {
     Terraform  = "true"
     Region     = "sfo1"
   }
-}
-
-# SFO1 region config (for multi-region)
-module "sfo1_config" {
-  source = "../../regions/sfo1"
 }
 
 # Variables
