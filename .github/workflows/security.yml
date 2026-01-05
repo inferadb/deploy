@@ -73,29 +73,6 @@ jobs:
           sarif_file: "trivy-kubernetes.sarif"
           category: "trivy-kubernetes"
 
-  # Secret detection with Gitleaks
-  gitleaks:
-    name: Secret Detection
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
-        with:
-          egress-policy: audit
-
-      - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
-
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-
   # Checkov compliance scanning
   checkov:
     name: Checkov Compliance
@@ -194,7 +171,7 @@ jobs:
   # Security scan summary
   security-summary:
     name: Security Summary
-    needs: [trivy-iac, gitleaks, checkov, kics]
+    needs: [trivy-iac, checkov, kics]
     runs-on: ubuntu-latest
     if: always()
     permissions:
@@ -208,7 +185,6 @@ jobs:
       - name: Security scan results
         env:
           TRIVY_RESULT: ${{ needs.trivy-iac.result }}
-          GITLEAKS_RESULT: ${{ needs.gitleaks.result }}
           CHECKOV_RESULT: ${{ needs.checkov.result }}
           KICS_RESULT: ${{ needs.kics.result }}
         run: |
@@ -217,15 +193,8 @@ jobs:
           echo "| Scanner | Status |"
           echo "|---------|--------|"
           echo "| Trivy IaC | $TRIVY_RESULT |"
-          echo "| Gitleaks | $GITLEAKS_RESULT |"
           echo "| Checkov | $CHECKOV_RESULT |"
           echo "| KICS | $KICS_RESULT |"
-
-          # Fail if gitleaks found secrets
-          if [[ "$GITLEAKS_RESULT" == "failure" ]]; then
-            echo "::error::Gitleaks detected secrets in the codebase!"
-            exit 1
-          fi
-
           echo ""
+          echo "Secret scanning is handled by GitHub's native push protection."
           echo "Security scans completed. Check the Security tab for detailed findings."

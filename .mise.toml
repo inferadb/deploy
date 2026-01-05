@@ -34,7 +34,6 @@ github-cli = "2"
 
 # Validation tools (used by .githooks/pre-commit)
 shellcheck = "0.10"
-gitleaks = "8.21"
 "pipx:yamllint" = "latest"
 
 [env]
@@ -68,7 +67,6 @@ echo ""
 echo "Validation:"
 echo "  tflint:     $(tflint --version 2>/dev/null | head -1 || echo 'NOT INSTALLED')"
 echo "  shellcheck: $(shellcheck --version 2>/dev/null | grep version: || echo 'NOT INSTALLED')"
-echo "  gitleaks:   $(gitleaks version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "  yamllint:   $(yamllint --version 2>/dev/null || echo 'NOT INSTALLED (pip install yamllint)')"
 echo ""
 echo "Other:"

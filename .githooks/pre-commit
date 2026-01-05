@@ -81,22 +81,6 @@ if [ -n "$SH_FILES" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# Secret detection
-# ------------------------------------------------------------------------------
-echo -n "Checking for secrets... "
-if command -v gitleaks &> /dev/null; then
-  if gitleaks protect --staged --no-banner > /dev/null 2>&1; then
-    echo -e "${GREEN}OK${NC}"
-  else
-    echo -e "${RED}FAILED${NC}"
-    echo "  Potential secrets detected! Run: gitleaks protect --staged"
-    FAILED=1
-  fi
-else
-  echo -e "${YELLOW}SKIPPED${NC} (gitleaks not installed)"
-fi
-
-# ------------------------------------------------------------------------------
 # Trailing whitespace
 # ------------------------------------------------------------------------------
 echo -n "Checking for trailing whitespace... "
