@@ -4,7 +4,8 @@
     <p>Deployment infrastructure for InferaDB, supporting multi-environment, multi-region, and multi-provider deployments using GitOps principles</p>
 </div>
 
-<br />
+> [!IMPORTANT]
+> Under active development. Not production-ready.
 
 ## Architecture Overview
 
