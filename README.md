@@ -149,3 +149,12 @@ All changes require PR review. CI runs automatically on push/PR:
 - **Terraform**: Format and validate checks
 - **Kubernetes**: YAML lint and Kustomize build validation
 - **Security**: Trivy, Checkov, KICS, and Gitleaks scans
+
+## License
+
+Licensed under either of:
+
+- [Apache License, Version 2.0](LICENSE-APACHE)
+- [MIT License](LICENSE-MIT)
+
+at your option.
