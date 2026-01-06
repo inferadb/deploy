@@ -45,33 +45,51 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 
-      # Init container to wait for FDB
+      # Init container to wait for FDB to be fully ready
+      # Uses fdbcli to verify actual database connectivity, not just port availability
       initContainers:
         - name: wait-for-fdb
-          image: busybox:1.37.0@sha256:d80cd694d3e9467884fcb94b8ca1e20437d8a501096cdf367a5a1918a34fc2fd
+          # Use FDB client image matching cluster version for fdbcli
+          image: foundationdb/foundationdb:7.3.43
           command:
             - sh
             - -c
             - |
               echo "Waiting for FoundationDB to be ready..."
-              until nc -z -v -w30 inferadb-fdb 4500; do
-                echo "Waiting for FoundationDB..."
+              # First check port availability (fast fail)
+              until nc -z -w5 inferadb-fdb 4500 2>/dev/null; do
+                echo "Waiting for FDB port..."
+                sleep 2
+              done
+              echo "FDB port is open, checking database status..."
+              # Then verify database is actually ready using fdbcli
+              until fdbcli -C /etc/foundationdb/fdb.cluster --exec "status minimal" 2>/dev/null | grep -q "The database is available"; do
+                echo "Waiting for FDB database to be available..."
                 sleep 5
               done
               echo "FoundationDB is ready!"
+          env:
+            - name: FDB_CLUSTER_FILE
+              value: /etc/foundationdb/fdb.cluster
+          volumeMounts:
+            - name: fdb-cluster-file
+              mountPath: /etc/foundationdb
+              readOnly: true
           resources:
             requests:
               cpu: 10m
-              memory: 16Mi
-            limits:
-              cpu: 50m
               memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
 
       containers:
         - name: inferadb-engine
