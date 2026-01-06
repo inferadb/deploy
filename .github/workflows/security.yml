@@ -184,7 +184,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Security scan results
+      - name: Check security scan results
         env:
           TRIVY_RESULT: ${{ needs.trivy-iac.result }}
           CHECKOV_RESULT: ${{ needs.checkov.result }}
@@ -199,4 +199,26 @@ jobs:
           echo "| KICS | $KICS_RESULT |"
           echo ""
           echo "Secret scanning is handled by GitHub's native push protection."
-          echo "Security scans completed. Check the Security tab for detailed findings."
+
+          # Fail if any security job failed
+          failed=false
+          if [[ "$TRIVY_RESULT" != "success" && "$TRIVY_RESULT" != "skipped" ]]; then
+            echo "❌ Trivy IaC scan failed"
+            failed=true
+          fi
+          if [[ "$CHECKOV_RESULT" != "success" && "$CHECKOV_RESULT" != "skipped" ]]; then
+            echo "❌ Checkov compliance scan failed"
+            failed=true
+          fi
+          if [[ "$KICS_RESULT" != "success" && "$KICS_RESULT" != "skipped" ]]; then
+            echo "❌ KICS security scan failed"
+            failed=true
+          fi
+
+          if [[ "$failed" == "true" ]]; then
+            echo ""
+            echo "❌ One or more security checks failed"
+            exit 1
+          fi
+
+          echo "✅ All security checks passed!"
