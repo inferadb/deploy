@@ -42,18 +42,14 @@ We follow [coordinated vulnerability disclosure](https://en.wikipedia.org/wiki/C
 
 Security issues we're interested in include:
 
-- Infrastructure misconfigurations
-- Secret exposure in configurations
-- Kubernetes security policy bypasses
-- Network policy gaps
-- CI/CD pipeline vulnerabilities
-- Supply chain vulnerabilities
+- Test fixtures that could expose security vulnerabilities
+- Insecure test patterns that might be copied
+- Credential exposure in test configurations
 
 ## Out of Scope
 
-- Vulnerabilities in upstream tools (Terraform, Kubernetes, etc.)
-- Issues requiring access to private infrastructure
-- Theoretical attacks without practical impact
+- Vulnerabilities in test dependencies
+- Issues that only affect test environments
 
 ## Security Updates
 
