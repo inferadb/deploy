@@ -64,13 +64,13 @@ jobs:
           version: "v0.60.0" # Pin to stable version (v0.65.0 has panic bugs)
 
       - name: Upload Trivy Terraform results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
         with:
           sarif_file: "trivy-terraform.sarif"
           category: "trivy-terraform"
 
       - name: Upload Trivy Kubernetes results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
         with:
           sarif_file: "trivy-kubernetes.sarif"
           category: "trivy-kubernetes"
@@ -92,7 +92,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Run Checkov on Terraform
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@8f61ce5b8a3afb4ca94d236b75201878ded6d2cd # v12.3077.0
         with:
           directory: terraform/
           framework: terraform
@@ -104,7 +104,7 @@ jobs:
           skip_check: CKV_TF_1
 
       - name: Run Checkov on Kubernetes
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@8f61ce5b8a3afb4ca94d236b75201878ded6d2cd # v12.3077.0
         with:
           directory: flux/
           framework: kubernetes
@@ -124,14 +124,14 @@ jobs:
           skip_check: CKV_K8S_14,CKV_K8S_43,CKV2_K8S_6,CKV_K8S_22,CKV_K8S_35
 
       - name: Upload Checkov Terraform results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
         if: always()
         with:
           sarif_file: checkov-terraform.sarif
           category: "checkov-terraform"
 
       - name: Upload Checkov Kubernetes results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
         if: always()
         with:
           sarif_file: checkov-kubernetes.sarif
@@ -164,7 +164,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload KICS results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
         if: always()
         with:
           sarif_file: kics-results/results.sarif
