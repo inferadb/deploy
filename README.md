@@ -5,7 +5,7 @@
         <a href="https://discord.gg/inferadb"><img src="https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white" alt="Discord" /></a>
         <a href="#license"><img src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg" alt="License" /></a>
     </p>
-    <p>InferaDB deployment infrastructure with GitOps-driven multi-environment, multi-region, and multi-provider support</p>
+    <p>GitOps deployment for multi-region, multi-cloud Kubernetes</p>
 </div>
 
 > [!IMPORTANT]
@@ -155,13 +155,8 @@ All changes require PR review. CI runs on push/PR:
 
 ## Community
 
-Join us on [Discord](https://discord.gg/inferadb) to discuss InferaDB, get help, and connect with other developers.
+Join us on [Discord](https://discord.gg/inferadb) for questions, discussions, and contributions.
 
 ## License
 
-Licensed under either of:
-
-- [Apache License, Version 2.0](LICENSE-APACHE)
-- [MIT License](LICENSE-MIT)
-
-at your option.
+Dual-licensed under [MIT](LICENSE-MIT) or [Apache 2.0](LICENSE-APACHE).
