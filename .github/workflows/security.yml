@@ -16,10 +16,10 @@ on:
     # Run weekly on Monday at 6am UTC for drift detection
     - cron: "0 6 * * 1"
 
-# Cancel in-progress runs for PRs
+# Cancel in-progress runs when new commits are pushed
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
