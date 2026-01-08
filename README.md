@@ -5,7 +5,7 @@
         <a href="https://discord.gg/inferadb"><img src="https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white" alt="Discord" /></a>
         <a href="#license"><img src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg" alt="License" /></a>
     </p>
-    <p>Deployment infrastructure for InferaDB, supporting multi-environment, multi-region, and multi-provider deployments using GitOps principles</p>
+    <p>InferaDB deployment infrastructure with GitOps-driven multi-environment, multi-region, and multi-provider support</p>
 </div>
 
 > [!IMPORTANT]
@@ -13,7 +13,7 @@
 
 ## Architecture Overview
 
-- **OS**: Talos Linux (immutable, API-driven Kubernetes)
+- **OS**: Talos Linux (immutable, API-driven)
 - **Orchestration**: Kubernetes
 - **GitOps**: Flux CD
 - **IaC**: Terraform + OpenTofu
@@ -49,24 +49,24 @@ deploy/
 Use the [InferaDB CLI](https://github.com/inferadb/cli) for local development:
 
 ```bash
-# Create local Talos cluster and deploy full InferaDB stack
+# Create local cluster and deploy InferaDB stack
 inferadb dev start
 
 # Show cluster status
 inferadb dev status
 
-# Tear down local cluster
+# Tear down cluster
 inferadb dev stop --destroy
 ```
 
 The dev environment deploys:
 
-- **FoundationDB**: Single-node cluster for development
-- **Engine**: Authorization policy decision engine
+- **FoundationDB**: Single-node cluster
+- **Engine**: Authorization policy engine
 - **Control**: Control plane API
 - **Dashboard**: Web console
 
-Access services via port forwarding:
+Access services:
 
 ```bash
 kubectl port-forward -n inferadb svc/inferadb-engine 8080:8080
@@ -77,20 +77,20 @@ kubectl port-forward -n inferadb svc/inferadb-dashboard 3000:3000
 ### Staging/Production Deployment
 
 ```bash
-# Bootstrap a new cluster
+# Bootstrap a cluster
 ./scripts/bootstrap-cluster.sh <environment> <region> <provider>
 
-# Example: Bootstrap staging NYC1 on AWS
+# Example: staging NYC1 on AWS
 ./scripts/bootstrap-cluster.sh staging nyc1 aws
 ```
 
 ## Environments
 
-| Environment | Regions              | Purpose                           |
-| ----------- | -------------------- | --------------------------------- |
-| Development | Local (Docker)       | Local development and testing     |
-| Staging     | NYC1 + monthly drills| Pre-production validation         |
-| Production  | NYC1, SFO1           | Production workloads              |
+| Environment | Regions              | Purpose                    |
+| ----------- | -------------------- | -------------------------- |
+| Development | Local (Docker)       | Development and testing    |
+| Staging     | NYC1 + monthly drills| Pre-production validation  |
+| Production  | NYC1, SFO1           | Live workloads             |
 
 ## Key Components
 
@@ -110,10 +110,10 @@ kubectl port-forward -n inferadb svc/inferadb-dashboard 3000:3000
 
 ## Security
 
-- Pod Security Standards enforced at namespace level
-- Cilium NetworkPolicies with default deny
-- Image signing verification via Kyverno
-- WireGuard encryption for all pod-to-pod traffic
+- Pod Security Standards (namespace-level)
+- Cilium NetworkPolicies (default deny)
+- Image signing via Kyverno
+- WireGuard pod-to-pod encryption
 - Trivy vulnerability scanning
 
 ## Documentation
@@ -133,30 +133,29 @@ kubectl port-forward -n inferadb svc/inferadb-dashboard 3000:3000
 
 ## Development Setup
 
-Enable git hooks for local validation:
+Enable git hooks:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-Required tools (install via `.mise.toml` or manually):
+Required tools (via `.mise.toml` or manual install):
 
-- `terraform` - Terraform formatting
+- `terraform` - formatting
 - `yamllint` - YAML linting (`pip install yamllint`)
-- `shellcheck` - Shell script linting
-- `gitleaks` - Secret detection
+- `shellcheck` - shell linting
 
 ## Contributing
 
-All changes require PR review. CI runs automatically on push/PR:
+All changes require PR review. CI runs on push/PR:
 
 - **Terraform**: Format and validate checks
 - **Kubernetes**: YAML lint and Kustomize build validation
-- **Security**: Trivy, Checkov, KICS, and Gitleaks scans
+- **Security**: Trivy, Checkov, and KICS scans
 
 ## Community
 
-Join us on [Discord](https://discord.gg/inferadb) to discuss InferaDB, get help with your projects, and connect with other developers. Whether you have questions, want to share what you're building, or are interested in contributing, we'd love to have you!
+Join us on [Discord](https://discord.gg/inferadb) to discuss InferaDB, get help, and connect with other developers.
 
 ## License
 
