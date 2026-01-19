@@ -19,9 +19,17 @@ data:
   INFERADB__CONTROL__LISTEN__GRPC: "0.0.0.0:9091"
   INFERADB__CONTROL__LISTEN__MESH: "0.0.0.0:9092"
 
-  # Storage configuration - use FoundationDB
-  INFERADB__CONTROL__STORAGE: "foundationdb"
-  INFERADB__CONTROL__FOUNDATIONDB__CLUSTER_FILE: "/etc/foundationdb/fdb.cluster"
+  # Storage configuration - use Ledger
+  INFERADB__CONTROL__STORAGE: "ledger"
+
+  # Ledger configuration
+  # Connects to the inferadb-ledger-client Service (load-balanced)
+  INFERADB__CONTROL__LEDGER__ENDPOINT: "http://inferadb-ledger-client.inferadb:50051"
+  # Client ID for idempotency tracking
+  # In production, consider using pod name via downward API
+  INFERADB__CONTROL__LEDGER__CLIENT_ID: "control-default"
+  # Namespace ID for data scoping (default namespace)
+  INFERADB__CONTROL__LEDGER__NAMESPACE_ID: "1"
 
   # WebAuthn configuration (dev defaults)
   INFERADB__CONTROL__WEBAUTHN__PARTY: "localhost"

@@ -1,49 +1,56 @@
+# Network policy for InferaDB Ledger
+# Allows Engine and Control to connect, Ledger peers to communicate via Raft,
+# and Prometheus to scrape metrics.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: foundationdb-policy
+  name: ledger-policy
   namespace: inferadb
 spec:
   endpointSelector:
     matchLabels:
-      app: foundationdb
+      app.kubernetes.io/name: inferadb-ledger
   ingress:
-    # Allow traffic from engine
+    # Allow gRPC traffic from Engine (storage operations + WatchBlocks)
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: inferadb-engine
       toPorts:
         - ports:
-            - port: "4500"
+            - port: "50051"
               protocol: TCP
-    # Allow traffic from other FDB processes (cluster coordination)
+    # Allow gRPC traffic from Control (storage operations)
     - fromEndpoints:
         - matchLabels:
-            app: foundationdb
+            app.kubernetes.io/name: inferadb-control
       toPorts:
         - ports:
-            - port: "4500"
+            - port: "50051"
               protocol: TCP
-            - port: "4501" # Coordination port
+    # Allow Raft peer communication from other Ledger instances
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: inferadb-ledger
+      toPorts:
+        - ports:
+            - port: "50051"
               protocol: TCP
     # Allow Prometheus scraping
     - fromEndpoints:
         - matchLabels:
-            app: fdb-prometheus-exporter
+            app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
-            - port: "4500"
+            - port: "9090"
               protocol: TCP
   egress:
-    # FDB cluster coordination only - NO internet access
+    # Raft peer communication - Ledger instances talk to each other
     - toEndpoints:
         - matchLabels:
-            app: foundationdb
+            app.kubernetes.io/name: inferadb-ledger
       toPorts:
         - ports:
-            - port: "4500"
-              protocol: TCP
-            - port: "4501"
+            - port: "50051"
               protocol: TCP
     # DNS resolution (required for service discovery)
     - toEndpoints:
@@ -55,13 +62,4 @@ spec:
             - port: "53"
               protocol: UDP
             - port: "53"
-              protocol: TCP
-    # S3/GCS for backups (backup agent runs on FDB pods)
-    - toFQDNs:
-        - matchPattern: "*.s3.amazonaws.com"
-        - matchPattern: "*.s3.*.amazonaws.com"
-        - matchPattern: "storage.googleapis.com"
-      toPorts:
-        - ports:
-            - port: "443"
               protocol: TCP

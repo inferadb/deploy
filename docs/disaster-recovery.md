@@ -1,10 +1,10 @@
 # Disaster Recovery Guide
 
-This guide covers disaster recovery procedures for InferaDB deployments using FoundationDB Fearless DR.
+This guide covers disaster recovery procedures for InferaDB deployments using Ledger Raft replication.
 
 ## Overview
 
-InferaDB's disaster recovery is built on FoundationDB's native multi-region replication. When properly configured, the system provides:
+InferaDB's disaster recovery is built on Ledger's native Raft replication. When properly configured, the system provides:
 
 - **RPO (Recovery Point Objective)**: Near-zero (synchronous replication)
 - **RTO (Recovery Time Objective)**: < 60 seconds for automatic failover
@@ -14,21 +14,21 @@ InferaDB's disaster recovery is built on FoundationDB's native multi-region repl
 ```mermaid
 flowchart TB
     subgraph primary["Primary Region (Active)"]
-        fdb1[FDB Cluster]
+        ledger1[Ledger Cluster]
         engine1[Engine Pods]
         control1[Control Pods]
     end
 
     subgraph dr["DR Region (Standby)"]
-        fdb2[FDB Cluster]
+        ledger2[Ledger Cluster]
         engine2[Engine Pods]
         control2[Control Pods]
     end
 
-    fdb1 -->|"Synchronous Replication"| fdb2
+    ledger1 -->|"Raft Replication"| ledger2
 
     subgraph failover["On Primary Failure"]
-        fdb2 -->|"Promote to Primary"| active[Accept Writes]
+        ledger2 -->|"Elect New Leader"| active[Accept Writes]
     end
 ```
 
@@ -36,7 +36,7 @@ flowchart TB
 
 Before a disaster occurs, ensure:
 
-1. **Multi-region FDB deployed** - See [foundationdb-multi-region.md](./foundationdb-multi-region.md)
+1. **Multi-region Ledger deployed** - See [ledger-multi-region.md](./ledger-multi-region.md)
 2. **Tailscale mesh configured** - See [tailscale-multi-region.md](./tailscale-multi-region.md)
 3. **Monitoring in place** - Alerts for replication lag and availability
 4. **Runbooks documented** - Team knows recovery procedures
@@ -61,11 +61,11 @@ kubectl get pods -n inferadb -w
 **Recovery**:
 
 1. Kubernetes reschedules pods to healthy nodes
-2. FDB redistributes data automatically
+2. Ledger redistributes data automatically
 
 ```bash
-# Check FDB status
-kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb -- fdbcli --exec "status"
+# Check Ledger status
+kubectl exec -it inferadb-ledger-0 -n inferadb -- grpcurl -plaintext localhost:50051 grpc.health.v1.Health/Check
 ```
 
 ### Scenario 3: Availability Zone Failure
@@ -75,7 +75,7 @@ kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb -- fdbcli --
 **Recovery**:
 
 1. Pods reschedule to surviving AZs
-2. FDB maintains quorum if majority survives
+2. Ledger maintains quorum if majority survives
 
 ```bash
 # Check node distribution
@@ -92,19 +92,19 @@ kubectl get pods -n inferadb -o wide
 
 ### Automatic Failover
 
-FDB Fearless DR handles most failures automatically:
+Ledger Raft replication handles most failures automatically:
 
 1. Primary region becomes unavailable
-2. DR coordinators detect quorum loss
-3. DR region promoted to primary (typically < 60 seconds)
+2. Remaining nodes detect leader loss
+3. DR region elects new leader (typically < 10 seconds)
 4. Applications reconnect to DR endpoints
 
 **Monitor for automatic failover:**
 
 ```bash
-# Watch FDB status in DR region
-kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb \
-  --context eks-dr -- fdbcli --exec "status"
+# Watch Ledger status in DR region
+kubectl exec -it inferadb-ledger-0 -n inferadb \
+  --context eks-dr -- grpcurl -plaintext localhost:50051 inferadb.ledger.v1.Admin/GetClusterStatus
 ```
 
 ### Manual Failover
@@ -116,21 +116,19 @@ Use manual failover when:
 - Primary is partially available but degraded
 
 ```bash
-# Force DR promotion (may lose uncommitted transactions)
-kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb \
-  --context eks-dr -- fdbcli --exec "force_recovery_with_data_loss"
+# Force leader election in DR region
+kubectl exec -it inferadb-ledger-0 -n inferadb \
+  --context eks-dr -- grpcurl -plaintext localhost:50051 inferadb.ledger.v1.Admin/ForceLeaderElection
 ```
-
-**Warning**: `force_recovery_with_data_loss` may result in data loss if the primary has uncommitted transactions.
 
 ### Post-Failover Steps
 
 1. **Verify DR is primary:**
 
    ```bash
-   kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb \
-     --context eks-dr -- fdbcli --exec "status"
-   # Should show "Healthy" and accepting writes
+   kubectl exec -it inferadb-ledger-0 -n inferadb \
+     --context eks-dr -- grpcurl -plaintext localhost:50051 inferadb.ledger.v1.Admin/GetClusterStatus
+   # Should show healthy leader status
    ```
 
 2. **Update DNS/Load Balancer** (if not automatic):
@@ -158,12 +156,12 @@ kubectl get pods -n inferadb --context eks-primary
 
 ### Step 2: Re-sync Data
 
-The original primary automatically re-syncs from current primary:
+The original primary automatically re-syncs from current leader:
 
 ```bash
 # Monitor sync progress
-kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb \
-  --context eks-primary -- fdbcli --exec "status details"
+kubectl exec -it inferadb-ledger-0 -n inferadb \
+  --context eks-primary -- grpcurl -plaintext localhost:50051 inferadb.ledger.v1.Admin/GetClusterStatus
 ```
 
 Wait for "Fully replicated" status.
@@ -173,9 +171,9 @@ Wait for "Fully replicated" status.
 If you want the original region as primary:
 
 ```bash
-# Promote original region back to primary
-kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb \
-  --context eks-primary -- fdbcli --exec "force_recovery_with_data_loss"
+# Trigger leader transfer to original region
+kubectl exec -it inferadb-ledger-0 -n inferadb \
+  --context eks-primary -- grpcurl -plaintext localhost:50051 inferadb.ledger.v1.Admin/RequestLeaderTransfer
 ```
 
 **Note**: Only do this during a maintenance window.
@@ -189,8 +187,8 @@ kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb \
 3. **Simulate primary failure:**
 
    ```bash
-   # Scale down primary FDB
-   kubectl scale statefulset inferadb-fdb-storage --replicas=0 \
+   # Scale down primary Ledger
+   kubectl scale statefulset inferadb-ledger --replicas=0 \
      -n inferadb --context eks-primary
    ```
 
@@ -199,7 +197,7 @@ kubectl exec -it inferadb-fdb-storage-0 -n inferadb -c foundationdb \
 6. **Restore primary:**
 
    ```bash
-   kubectl scale statefulset inferadb-fdb-storage --replicas=3 \
+   kubectl scale statefulset inferadb-ledger --replicas=3 \
      -n inferadb --context eks-primary
    ```
 
@@ -232,11 +230,11 @@ jobs:
 
 ### Key Metrics
 
-| Metric                        | Alert Threshold | Action                   |
-| ----------------------------- | --------------- | ------------------------ |
-| `fdb_database_available`      | == 0            | Page on-call             |
-| `fdb_replication_lag_seconds` | > 5s            | Investigate network      |
-| `fdb_coordinators_connected`  | < 3             | Check coordinator health |
+| Metric                           | Alert Threshold | Action                   |
+| -------------------------------- | --------------- | ------------------------ |
+| `ledger_raft_leader`             | == 0            | Page on-call             |
+| `ledger_replication_lag_seconds` | > 5s            | Investigate network      |
+| `ledger_raft_peers_connected`    | < quorum        | Check peer health        |
 
 ### Alert Examples
 
@@ -245,51 +243,50 @@ jobs:
 groups:
   - name: inferadb-dr
     rules:
-      - alert: FDBReplicationLagHigh
-        expr: fdb_replication_lag_seconds > 5
+      - alert: LedgerReplicationLagHigh
+        expr: ledger_replication_lag_seconds > 5
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "FDB replication lag is high"
+          summary: "Ledger replication lag is high"
 
-      - alert: FDBUnavailable
-        expr: fdb_database_available == 0
+      - alert: LedgerNoLeader
+        expr: ledger_raft_leader == 0
         for: 30s
         labels:
           severity: critical
         annotations:
-          summary: "FDB database unavailable - DR may be needed"
+          summary: "Ledger cluster has no leader - DR may be needed"
 ```
 
 ## Backup and Restore
 
-While FDB Fearless DR handles real-time replication, maintain backups for:
+While Ledger Raft replication handles real-time replication, maintain backups for:
 
 - Point-in-time recovery
 - Corruption recovery
 - Compliance requirements
 
-### FDB Backup
+### Ledger Backup
 
 ```bash
-# Start continuous backup
-fdbbackup start -d file:///backup/inferadb -z
+# Trigger snapshot backup
+kubectl exec -it inferadb-ledger-0 -n inferadb -- grpcurl -plaintext localhost:50051 inferadb.ledger.v1.Admin/CreateSnapshot
 
-# Check backup status
-fdbbackup status -d file:///backup/inferadb
+# Copy snapshot to external storage
+kubectl cp inferadb-ledger-0:/var/lib/ledger/snapshots/ ./backup/
 ```
 
 ### Restore from Backup
 
 ```bash
-# Restore to new cluster
-fdbrestore start -r file:///backup/inferadb --dest-cluster-file /etc/foundationdb/fdb.cluster
+# Restore snapshot to new cluster
+kubectl cp ./backup/ inferadb-ledger-0:/var/lib/ledger/snapshots/
+kubectl exec -it inferadb-ledger-0 -n inferadb -- grpcurl -plaintext localhost:50051 inferadb.ledger.v1.Admin/RestoreFromSnapshot
 ```
 
 ## References
 
-- [FoundationDB Fearless DR](https://apple.github.io/foundationdb/configuration.html#fearless-dr)
-- [FDB Backup and Restore](https://apple.github.io/foundationdb/backups.html)
-- [InferaDB Multi-Region Setup](./foundationdb-multi-region.md)
+- [InferaDB Multi-Region Setup](./ledger-multi-region.md)
 - [Operational Runbooks](../../deploy/runbooks/)

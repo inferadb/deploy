@@ -17,9 +17,17 @@ data:
   INFERADB__ENGINE__LISTEN__GRPC: "0.0.0.0:8081"
   INFERADB__ENGINE__LISTEN__MESH: "0.0.0.0:8082"
 
-  # Storage configuration - use FoundationDB
-  INFERADB__ENGINE__STORAGE: "foundationdb"
-  INFERADB__ENGINE__FOUNDATIONDB__CLUSTER_FILE: "/etc/foundationdb/fdb.cluster"
+  # Storage configuration - use Ledger
+  INFERADB__ENGINE__STORAGE: "ledger"
+
+  # Ledger configuration
+  # Connects to the inferadb-ledger-client Service (load-balanced)
+  INFERADB__ENGINE__LEDGER__ENDPOINT: "http://inferadb-ledger-client.inferadb:50051"
+  # Client ID should be unique per engine instance for idempotency tracking
+  # In production, consider using pod name via downward API
+  INFERADB__ENGINE__LEDGER__CLIENT_ID: "engine-default"
+  # Namespace ID for data scoping (default namespace)
+  INFERADB__ENGINE__LEDGER__NAMESPACE_ID: "1"
 
   # Cache configuration
   INFERADB__ENGINE__CACHE__ENABLED: "true"

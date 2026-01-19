@@ -36,11 +36,13 @@ cluster:
           namespaces: ["inferadb"]
           verbs: ["create", "update", "patch", "delete"]
 
-        # Log all changes to FoundationDB
+        # Log all changes to Ledger
         - level: Request
+          namespaces: ["inferadb"]
           resources:
-            - group: "apps.foundationdb.org"
-              resources: ["*"]
+            - group: "apps"
+              resources: ["statefulsets"]
+          verbs: ["create", "update", "patch", "delete"]
 
         # Don't log reads of common resources (too noisy)
         - level: None

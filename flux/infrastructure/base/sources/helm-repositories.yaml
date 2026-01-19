@@ -47,15 +47,6 @@ spec:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: foundationdb
-  namespace: flux-system
-spec:
-  interval: 24h
-  url: https://foundationdb.github.io/fdb-kubernetes-operator/
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
   name: external-secrets
   namespace: flux-system
 spec:

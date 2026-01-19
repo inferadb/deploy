@@ -61,7 +61,7 @@ inferadb dev stop --destroy
 
 The dev environment deploys:
 
-- **FoundationDB**: Single-node cluster
+- **Ledger**: Single-node blockchain storage
 - **Engine**: Authorization policy engine
 - **Control**: Control plane API
 - **Dashboard**: Web console
@@ -100,7 +100,7 @@ kubectl port-forward -n inferadb svc/inferadb-dashboard 3000:3000
 - `provider-aws`: AWS-specific resources (VPC, EC2, etc.)
 - `provider-gcp`: GCP-specific resources
 - `provider-digitalocean`: DigitalOcean-specific resources
-- `fdb-backup`: FoundationDB backup infrastructure
+- `ledger-cluster`: Ledger StatefulSet deployment
 - `dns`: Multi-provider DNS management
 
 ### Flux Kustomizations
@@ -126,7 +126,7 @@ kubectl port-forward -n inferadb svc/inferadb-dashboard 3000:3000
 
 ## Runbooks
 
-- [FDB Cluster Recovery](runbooks/fdb-cluster-recovery.md)
+- [Ledger Cluster Recovery](runbooks/ledger-cluster-recovery.md)
 - [Node Replacement](runbooks/node-replacement.md)
 - [Full Region Failover](runbooks/full-region-failover.md)
 - [Break-Glass Procedures](runbooks/break-glass-procedures.md)

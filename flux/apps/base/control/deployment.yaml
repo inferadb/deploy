@@ -45,36 +45,28 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 
-      # Init container to wait for FDB to be fully ready
-      # Uses fdbcli to verify actual database connectivity, not just port availability
+      # Init container to wait for Ledger to be ready
+      # Uses grpcurl to verify gRPC endpoint availability
       initContainers:
-        - name: wait-for-fdb
-          # Use FDB client image matching cluster version for fdbcli
-          image: foundationdb/foundationdb:7.3.43
+        - name: wait-for-ledger
+          image: fullstorydev/grpcurl:v1.8.9
           command:
             - sh
             - -c
             - |
-              echo "Waiting for FoundationDB to be ready..."
-              # First check port availability (fast fail)
-              until nc -z -w5 inferadb-fdb 4500 2>/dev/null; do
-                echo "Waiting for FDB port..."
+              echo "Waiting for Ledger to be ready..."
+              LEDGER_ENDPOINT="${LEDGER_HOST}:${LEDGER_PORT}"
+              # Wait for Ledger gRPC endpoint to respond
+              until grpcurl -plaintext "${LEDGER_ENDPOINT}" list 2>/dev/null; do
+                echo "Waiting for Ledger gRPC endpoint at ${LEDGER_ENDPOINT}..."
                 sleep 2
               done
-              echo "FDB port is open, checking database status..."
-              # Then verify database is actually ready using fdbcli
-              until fdbcli -C /etc/foundationdb/fdb.cluster --exec "status minimal" 2>/dev/null | grep -q "The database is available"; do
-                echo "Waiting for FDB database to be available..."
-                sleep 5
-              done
-              echo "FoundationDB is ready!"
+              echo "Ledger is ready!"
           env:
-            - name: FDB_CLUSTER_FILE
-              value: /etc/foundationdb/fdb.cluster
-          volumeMounts:
-            - name: fdb-cluster-file
-              mountPath: /etc/foundationdb
-              readOnly: true
+            - name: LEDGER_HOST
+              value: inferadb-ledger-client.inferadb
+            - name: LEDGER_PORT
+              value: "50051"
           resources:
             requests:
               cpu: 10m
@@ -117,9 +109,6 @@ spec:
                 name: inferadb-control-secrets
                 optional: true
           volumeMounts:
-            - name: fdb-cluster-file
-              mountPath: /etc/foundationdb
-              readOnly: true
             - name: tmp
               mountPath: /tmp
             - name: data
@@ -165,13 +154,6 @@ spec:
             runAsUser: 65532
 
       volumes:
-        - name: fdb-cluster-file
-          configMap:
-            # Use the operator-generated config with real cluster connection string
-            name: inferadb-fdb-config
-            items:
-              - key: cluster-file
-                path: fdb.cluster
         - name: tmp
           emptyDir: {}
         - name: data

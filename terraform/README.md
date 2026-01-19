@@ -127,7 +127,7 @@ Spot instances provide 60-70% cost savings for stateless workloads:
 - **Strategy**: 1 on-demand base instance + spot for additional capacity
 
 **Important**: Never use spot instances for:
-- FoundationDB storage nodes
+- Ledger storage nodes
 - Control plane nodes
 - Stateful workloads requiring guaranteed uptime
 
@@ -242,8 +242,8 @@ After provisioning infrastructure:
 1. Bootstrap Flux GitOps (see `flux/` directory)
 2. Deploy Cilium CNI
 3. Configure External Secrets Operator
-4. Deploy FoundationDB Operator
-5. Deploy InferaDB applications
+4. Deploy Ledger (via Flux: `flux/apps/base/ledger/`)
+5. Deploy InferaDB applications (Engine, Control)
 
 ## References
 

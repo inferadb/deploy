@@ -3,5 +3,5 @@ kind: Kustomization
 resources:
   - ../base
   - default-deny.yaml
-  - fdb-policy.yaml
+  - ledger-policy.yaml
   - inferadb-namespace.yaml

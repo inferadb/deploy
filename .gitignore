@@ -49,10 +49,3 @@ load-tests/results/*.html
 
 # TFLint plugin cache
 .tflint.d/
-
-# Infracost cache
-.infracost/
-
-# Large planning documents (regenerated)
-DEPLOYMENT_PLAN.md
-PHASE1_COMPLETE.md

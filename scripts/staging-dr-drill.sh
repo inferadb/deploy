@@ -89,22 +89,22 @@ log "Running bootstrap-cluster.sh for staging-sfo1..."
 log "Cluster bootstrap complete."
 echo ""
 
-# Phase 3: Configure FDB async replication
-log "=== Phase 3: Configure FoundationDB async replication ==="
+# Phase 3: Configure Ledger replication
+log "=== Phase 3: Configure Ledger replication ==="
 
-FDB_DR_MANIFEST="${REPO_ROOT}/flux/apps/staging/foundationdb/dr-replica.yaml"
+LEDGER_DR_MANIFEST="${REPO_ROOT}/flux/apps/staging/ledger/dr-replica.yaml"
 
-if [ -f "${FDB_DR_MANIFEST}" ]; then
-  log "Applying FoundationDB DR replica configuration..."
-  kubectl --context staging-sfo1 apply -f "${FDB_DR_MANIFEST}" | tee -a "${DRILL_LOG_FILE}"
+if [ -f "${LEDGER_DR_MANIFEST}" ]; then
+  log "Applying Ledger DR replica configuration..."
+  kubectl --context staging-sfo1 apply -f "${LEDGER_DR_MANIFEST}" | tee -a "${DRILL_LOG_FILE}"
 
-  log "Waiting for FDB DR replica to be ready..."
+  log "Waiting for Ledger DR replica to be ready..."
   sleep 30
 
-  log "FoundationDB DR configuration complete."
+  log "Ledger DR configuration complete."
 else
-  log "Warning: FDB DR manifest not found at: ${FDB_DR_MANIFEST}"
-  log "Skipping FDB async replication configuration."
+  log "Warning: Ledger DR manifest not found at: ${LEDGER_DR_MANIFEST}"
+  log "Skipping Ledger async replication configuration."
 fi
 
 echo ""
@@ -144,7 +144,7 @@ Infrastructure:
 Results:
   - Infrastructure provisioning: SUCCESS
   - Cluster bootstrap: SUCCESS
-  - FDB replication: $([ -f "${FDB_DR_MANIFEST}" ] && echo "SUCCESS" || echo "SKIPPED")
+  - Ledger replication: $([ -f "${LEDGER_DR_MANIFEST}" ] && echo "SUCCESS" || echo "SKIPPED")
   - Validation tests: $([ -f "${DR_VALIDATION_SCRIPT}" ] && echo "SUCCESS" || echo "SKIPPED")
 
 Next Steps:

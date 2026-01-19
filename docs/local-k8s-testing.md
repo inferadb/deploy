@@ -49,61 +49,65 @@ docker build -t inferadb-engine:local .
 cd ../control
 docker build -t inferadb-control:local .
 
+# Build ledger image
+cd ../ledger
+docker build -t inferadb-ledger:local .
+
 # Load images into kind cluster
 kind load docker-image inferadb-engine:local --name inferadb-local
 kind load docker-image inferadb-control:local --name inferadb-local
+kind load docker-image inferadb-ledger:local --name inferadb-local
 ```
 
-### 3. Deploy FoundationDB
+### 3. Deploy Ledger
 
 ```bash
-# Add FoundationDB operator
+# Create namespace
 kubectl create namespace inferadb
-kubectl apply -f https://raw.githubusercontent.com/FoundationDB/fdb-kubernetes-operator/main/config/crd/bases/apps.foundationdb.org_foundationdbclusters.yaml
 
-# Deploy a simple FDB cluster for testing
+# Deploy Ledger StatefulSet
 kubectl apply -f - <<EOF
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: foundationdb-cluster-file
-  namespace: inferadb
-data:
-  fdb.cluster: "docker:docker@127.0.0.1:4500"
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: foundationdb
+  name: inferadb-ledger
   namespace: inferadb
 spec:
-  serviceName: foundationdb
+  serviceName: inferadb-ledger
   replicas: 1
   selector:
     matchLabels:
-      app: foundationdb
+      app: inferadb-ledger
   template:
     metadata:
       labels:
-        app: foundationdb
+        app: inferadb-ledger
     spec:
       containers:
-      - name: foundationdb
-        image: foundationdb/foundationdb:7.1.38
+      - name: ledger
+        image: inferadb-ledger:local
+        imagePullPolicy: Never
         ports:
-        - containerPort: 4500
+        - containerPort: 50051
+          name: grpc
+        env:
+        - name: LEDGER_BIND_ADDR
+          value: "0.0.0.0:50051"
+        - name: BOOTSTRAP_EXPECT
+          value: "1"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: foundationdb-cluster
+  name: inferadb-ledger-client
   namespace: inferadb
 spec:
   selector:
-    app: foundationdb
+    app: inferadb-ledger
   ports:
-  - port: 4500
-    targetPort: 4500
+  - port: 50051
+    targetPort: 50051
+    name: grpc
 EOF
 ```
 
@@ -118,11 +122,6 @@ kubectl apply -f control/k8s/rbac.yaml -n inferadb
 ### 5. Deploy Control
 
 ```bash
-# Create control secrets
-kubectl create secret generic inferadb-control-secrets \
-  --namespace inferadb \
-  --from-literal=INFERADB_CTRL__DATABASE__FDB_CLUSTER_FILE=/etc/foundationdb/fdb.cluster
-
 # Deploy Control
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -136,8 +135,9 @@ data:
       host: "0.0.0.0"
       port: 9090
     storage:
-      backend: "foundationdb"
-      fdb_cluster_file: "/etc/foundationdb/fdb.cluster"
+      backend: "ledger"
+      ledger:
+        endpoint: "http://inferadb-ledger-client:50051"
     cache_invalidation:
       http_endpoints: []
       discovery:
@@ -159,6 +159,17 @@ spec:
         app: inferadb-control
     spec:
       serviceAccountName: inferadb-control
+      initContainers:
+      - name: wait-for-ledger
+        image: fullstorydev/grpcurl:v1.8.9
+        command:
+        - sh
+        - -c
+        - |
+          until grpcurl -plaintext inferadb-ledger-client:50051 grpc.health.v1.Health/Check; do
+            echo "Waiting for Ledger..."
+            sleep 2
+          done
       containers:
       - name: control
         image: inferadb-control:local
@@ -168,18 +179,17 @@ spec:
         env:
         - name: RUST_LOG
           value: "info,inferadb_control_core=debug"
+        - name: INFERADB_CTRL__STORAGE__BACKEND
+          value: "ledger"
+        - name: INFERADB_CTRL__STORAGE__LEDGER__ENDPOINT
+          value: "http://inferadb-ledger-client:50051"
         volumeMounts:
         - name: config
           mountPath: /etc/inferadb
-        - name: fdb-cluster-file
-          mountPath: /etc/foundationdb
       volumes:
       - name: config
         configMap:
           name: inferadb-control-config
-      - name: fdb-cluster-file
-        configMap:
-          name: foundationdb-cluster-file
 ---
 apiVersion: v1
 kind: Service
@@ -216,6 +226,17 @@ spec:
         app: inferadb-engine
     spec:
       serviceAccountName: inferadb-engine
+      initContainers:
+      - name: wait-for-ledger
+        image: fullstorydev/grpcurl:v1.8.9
+        command:
+        - sh
+        - -c
+        - |
+          until grpcurl -plaintext inferadb-ledger-client:50051 grpc.health.v1.Health/Check; do
+            echo "Waiting for Ledger..."
+            sleep 2
+          done
       containers:
       - name: inferadb
         image: inferadb-engine:local
@@ -229,6 +250,10 @@ spec:
           value: "0.0.0.0"
         - name: INFERADB__ENGINE__PORT
           value: "8080"
+        - name: INFERADB__ENGINE__STORAGE
+          value: "ledger"
+        - name: INFERADB__ENGINE__LEDGER__ENDPOINT
+          value: "http://inferadb-ledger-client:50051"
         - name: INFERADB__AUTH__DISCOVERY__MODE__TYPE
           value: "kubernetes"
         - name: INFERADB__AUTH__DISCOVERY__CACHE_TTL_SECONDS

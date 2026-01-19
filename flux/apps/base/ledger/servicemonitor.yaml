@@ -1,0 +1,20 @@
+# ServiceMonitor for Prometheus Operator
+# Scrapes metrics from all Ledger pods via the headless service
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: inferadb-ledger
+  namespace: inferadb
+  labels:
+    app.kubernetes.io/name: inferadb-ledger
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: inferadb
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inferadb-ledger
+      app.kubernetes.io/component: headless
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s

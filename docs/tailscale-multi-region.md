@@ -485,6 +485,6 @@ Import the Tailscale discovery dashboard template from `/docs/observability/graf
 
 ## Next Steps
 
-- [FoundationDB Multi-Region Setup](./foundationdb-multi-region.md)
+- [Ledger Multi-Region Setup](./ledger-multi-region.md)
 - [Disaster Recovery Guide](./disaster-recovery.md)
 - [Performance Tuning](./performance-tuning.md)

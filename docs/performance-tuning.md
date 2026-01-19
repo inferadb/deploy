@@ -8,7 +8,7 @@ InferaDB performance depends on three main components:
 
 1. **Engine** - Authorization decision latency
 2. **Control** - Policy management API response time
-3. **FoundationDB** - Underlying data store performance
+3. **Ledger** - Underlying data store performance
 
 ## Performance Targets
 
@@ -66,13 +66,13 @@ config:
 
 ### Connection Pooling
 
-For high-throughput deployments, tune FDB connection settings:
+For high-throughput deployments, tune Ledger connection settings:
 
 ```yaml
 config:
-  foundationdb:
-    clusterFile: "/etc/foundationdb/fdb.cluster"
-    # Connection pool settings (if supported)
+  ledger:
+    endpoint: "http://inferadb-ledger:50051"
+    # Connection pool settings
     maxConnections: 100
     connectionTimeout: 5000
 ```
@@ -99,35 +99,37 @@ autoscaling:
           averageValue: "5000" # Scale at 5k req/s per pod
 ```
 
-## FoundationDB Tuning
+## Ledger Tuning
 
-### Storage Engine
+### Raft Configuration
 
-Use `ssd-2` for production:
+Tune Raft consensus settings for your workload:
 
 ```yaml
-# FDB cluster configuration
-databaseConfiguration:
-  storage_engine: ssd-2 # Best for SSDs
-  # storage_engine: ssd-redwood-1  # Alternative with better compression
+# Ledger configuration
+config:
+  raft:
+    electionTimeout: 1000 # ms
+    heartbeatInterval: 100 # ms
+    snapshotInterval: 10000 # entries before snapshot
 ```
 
-### Process Counts
+### Replica Counts
 
-Scale based on workload:
+Scale based on workload and fault tolerance requirements:
 
-| Workload               | Storage | Log | Stateless |
-| ---------------------- | ------- | --- | --------- |
-| Small (< 10k req/s)    | 3       | 3   | 3         |
-| Medium (10k-50k req/s) | 5       | 5   | 5         |
-| Large (> 50k req/s)    | 9+      | 9+  | 9+        |
+| Workload               | Replicas | Notes                    |
+| ---------------------- | -------- | ------------------------ |
+| Small (< 10k req/s)    | 3        | Minimum for HA           |
+| Medium (10k-50k req/s) | 5        | Better read distribution |
+| Large (> 50k req/s)    | 7+       | High throughput          |
 
 ### Memory Configuration
 
-FDB processes benefit from memory for caching:
+Ledger processes benefit from memory for caching:
 
 ```yaml
-# FDB pod resources
+# Ledger pod resources
 resources:
   requests:
     memory: 8Gi
@@ -147,23 +149,13 @@ nodeSelector:
 # Or use local volume provisioner
 volumeClaimTemplates:
   - metadata:
-      name: fdb-data
+      name: ledger-data
     spec:
       accessModes: ["ReadWriteOnce"]
       storageClassName: local-nvme
       resources:
         requests:
           storage: 500Gi
-```
-
-### Commit Proxy Tuning
-
-For write-heavy workloads, increase commit proxies:
-
-```yaml
-databaseConfiguration:
-  commit_proxies: 5 # Default is 3
-  grv_proxies: 3 # Read version proxies
 ```
 
 ## Network Tuning
@@ -202,25 +194,25 @@ topologySpreadConstraints:
 
 If using a service mesh (Istio, Linkerd):
 
-1. **Exclude FDB ports** from mesh to avoid latency overhead
+1. **Exclude Ledger ports** from mesh to avoid latency overhead
 2. **Use mTLS termination** at the sidecar, not the application
 3. **Monitor sidecar CPU** - sidecars add ~5-10ms latency
 
 ```yaml
 # Istio port exclusion
 annotations:
-  traffic.sidecar.istio.io/excludeOutboundPorts: "4500,4501"
+  traffic.sidecar.istio.io/excludeOutboundPorts: "50051"
 ```
 
 ## Multi-Region Tuning
 
 ### Local Read Preference
 
-Configure Engine to prefer local FDB replicas:
+Configure Engine to prefer local Ledger replicas:
 
 ```yaml
 config:
-  foundationdb:
+  ledger:
     # Prefer reads from local datacenter
     datacenter: "us-west-1"
 ```
@@ -256,7 +248,7 @@ config:
 ```yaml
 extraEnv:
   - name: RUST_LOG
-    value: "info,inferadb_engine=debug,inferadb_fdb=debug"
+    value: "info,inferadb_engine=debug,inferadb_ledger=debug"
 ```
 
 ### Prometheus Metrics
@@ -273,8 +265,8 @@ rate(inferadb_requests_total[5m])
 # Cache effectiveness
 inferadb_cache_hits_total / (inferadb_cache_hits_total + inferadb_cache_misses_total)
 
-# FDB latency
-histogram_quantile(0.99, rate(fdb_transaction_duration_seconds_bucket[5m]))
+# Ledger latency
+histogram_quantile(0.99, rate(ledger_request_duration_seconds_bucket[5m]))
 ```
 
 ### Tracing
@@ -309,11 +301,11 @@ k6 run --vus 1000 --duration 10m stress.js
 
 On `m6i.xlarge` (4 vCPU, 16GB RAM):
 
-| Scenario                | Expected Throughput | Expected p99 Latency |
-| ----------------------- | ------------------- | -------------------- |
-| Cache hit               | 15,000 req/s        | < 1ms                |
-| Cache miss (local FDB)  | 8,000 req/s         | < 3ms                |
-| Cache miss (remote FDB) | 3,000 req/s         | < 15ms               |
+| Scenario                   | Expected Throughput | Expected p99 Latency |
+| -------------------------- | ------------------- | -------------------- |
+| Cache hit                  | 15,000 req/s        | < 1ms                |
+| Cache miss (local Ledger)  | 8,000 req/s         | < 3ms                |
+| Cache miss (remote Ledger) | 3,000 req/s         | < 15ms               |
 
 ## Common Performance Issues
 
@@ -324,12 +316,12 @@ On `m6i.xlarge` (4 vCPU, 16GB RAM):
 **Checks**:
 
 1. Cache hit rate (should be > 90%)
-2. FDB transaction latency
+2. Ledger request latency
 3. Network latency between pods
 
 ```bash
-# Check FDB latency
-kubectl exec -it inferadb-fdb-storage-0 -c foundationdb -- fdbcli --exec "status details"
+# Check Ledger latency
+kubectl exec -it inferadb-ledger-0 -- grpcurl -plaintext localhost:50051 grpc.health.v1.Health/Check
 ```
 
 ### Low Throughput
@@ -364,6 +356,5 @@ kubectl top pods -n inferadb --containers
 
 ## References
 
-- [FoundationDB Performance](https://apple.github.io/foundationdb/performance.html)
 - [Kubernetes HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
 - [InferaDB Helm Chart](../../engine/helm/README.md)

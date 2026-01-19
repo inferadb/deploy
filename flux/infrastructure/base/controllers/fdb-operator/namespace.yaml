@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: fdb-system
-  labels:
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/enforce-version: latest
-    app.kubernetes.io/name: fdb-operator
-    app.kubernetes.io/component: infrastructure

@@ -28,7 +28,7 @@ variable "worker_machine_type" {
 - Feature-specific files (e.g., `spot.tf`, `asg-mixed.tf`)
 
 ### Naming Conventions
-- Modules: `kebab-case` (e.g., `talos-cluster`, `fdb-backup`)
+- Modules: `kebab-case` (e.g., `talos-cluster`, `ledger-backup`)
 - Resources: `snake_case`
 - Environments: lowercase (`dev`, `staging`, `production`)
 - Regions: InferaDB-specific identifiers (e.g., `nyc1`, `sfo1`)

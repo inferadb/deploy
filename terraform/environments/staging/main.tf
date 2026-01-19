@@ -67,7 +67,7 @@ module "staging_nyc1" {
   worker_count        = 3
   worker_machine_type = "medium"
 
-  # Use spot instances for non-FDB workloads
+  # Use spot instances for stateless workloads
   use_spot_instances = true
   spot_max_price     = ""
 
@@ -104,7 +104,7 @@ module "staging_sfo1" {
   worker_count        = 3
   worker_machine_type = "medium"
 
-  # Use spot instances for non-FDB workloads
+  # Use spot instances for stateless workloads
   use_spot_instances = true
   spot_max_price     = ""
 

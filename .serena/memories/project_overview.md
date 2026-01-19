@@ -27,7 +27,7 @@ deploy/
 │   │   ├── provider-aws/       # AWS-specific resources
 │   │   ├── provider-gcp/       # GCP-specific resources
 │   │   ├── provider-digitalocean/
-│   │   ├── fdb-backup/         # FoundationDB backup
+│   │   ├── ledger-backup/       # Ledger backup
 │   │   ├── dns/                # Multi-provider DNS
 │   │   ├── tailscale-subnet-router/
 │   │   └── cost-alerts/
@@ -63,7 +63,7 @@ deploy/
 | Production  | NYC1, SFO1           | Production workloads          |
 
 ## InferaDB Components
-- **FoundationDB**: Distributed database backend
+- **Ledger**: Distributed database backend with cryptographic verification
 - **Engine**: Authorization policy decision engine
 - **Control**: Control plane API
 - **Dashboard**: Web console
