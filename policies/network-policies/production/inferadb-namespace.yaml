@@ -8,7 +8,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: inferadb-engine
   ingress:
-    # Allow traffic from control plane
+    # Allow traffic from Control (policy evaluation via EngineClient)
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: inferadb-control
@@ -18,7 +18,7 @@ spec:
               protocol: TCP
             - port: "8081"
               protocol: TCP
-    # Allow traffic from other engine instances (mesh)
+    # Allow traffic from other Engine instances (mesh)
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: inferadb-engine
@@ -26,16 +26,16 @@ spec:
         - ports:
             - port: "8082"
               protocol: TCP
-    # Allow Prometheus scraping
+    # Allow Prometheus scraping (metrics on mesh port)
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
-            - port: "9090"
+            - port: "8082"
               protocol: TCP
   egress:
-    # Allow Ledger gRPC connections (storage + WatchBlocks)
+    # Allow Ledger gRPC connections (storage + signing key lookups)
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: inferadb-ledger
@@ -63,32 +63,32 @@ spec:
     matchLabels:
       app.kubernetes.io/name: inferadb-control
   ingress:
-    # Allow traffic from Engine (JWKS fetch, mesh API)
-    - fromEndpoints:
-        - matchLabels:
-            app.kubernetes.io/name: inferadb-engine
-      toPorts:
-        - ports:
-            - port: "8080"
-              protocol: TCP
-            - port: "8081"
-              protocol: TCP
-    # Allow Prometheus scraping
+    # Allow Prometheus scraping (metrics on mesh port)
     - fromEndpoints:
         - matchLabels:
             app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
-            - port: "9090"
+            - port: "9092"
               protocol: TCP
   egress:
-    # Allow Ledger gRPC connections (storage operations)
+    # Allow Ledger gRPC connections (storage + signing key writes)
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: inferadb-ledger
       toPorts:
         - ports:
             - port: "50051"
+              protocol: TCP
+    # Allow Engine connections (policy evaluation via EngineClient)
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: inferadb-engine
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "8082"
               protocol: TCP
     # Allow DNS
     - toEndpoints:

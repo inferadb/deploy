@@ -38,9 +38,3 @@ data:
   INFERADB__ENGINE__TOKEN__CACHE_TTL: "300"
   INFERADB__ENGINE__TOKEN__CLOCK_SKEW: "60"
   INFERADB__ENGINE__TOKEN__MAX_AGE: "86400"
-
-  # Mesh configuration (communication with Control service)
-  INFERADB__ENGINE__MESH__URL: "http://inferadb-control.inferadb:9092"
-  INFERADB__ENGINE__MESH__TIMEOUT: "5000"
-  INFERADB__ENGINE__MESH__CACHE_TTL: "300"
-  INFERADB__ENGINE__MESH__CERT_CACHE_TTL: "900"
